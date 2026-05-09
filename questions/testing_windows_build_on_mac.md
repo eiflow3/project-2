@@ -172,13 +172,13 @@ jobs:
           
           # Print the connection credentials on the screen
           Write-Host "==================================================================" -ForegroundColor Green
-          Write-Host "🚀 NATIVE RDP SERVER IS READY!" -ForegroundColor Green
+          Write-Host "*** NATIVE RDP SERVER IS READY! ***" -ForegroundColor Green
           Write-Host "=================================================================="
           Write-Host "1. Connect using Windows App (formerly Remote Desktop) on your Mac to:"
-          Write-Host "   👉 $ConnectUrl" -ForegroundColor Yellow
+          Write-Host "   --> $ConnectUrl" -ForegroundColor Yellow
           Write-Host "2. Login Credentials:"
-          Write-Host "   👤 Username: runneradmin"
-          Write-Host "   🔑 Password: TestWindowsPass123!"
+          Write-Host "   Username: runneradmin"
+          Write-Host "   Password: TestWindowsPass123!"
           Write-Host "=================================================================="
           Write-Host "Press the Cancel Workflow button in GitHub when you are finished."
           Write-Host "=================================================================="
