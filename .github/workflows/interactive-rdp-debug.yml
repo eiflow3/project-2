@@ -82,14 +82,14 @@ jobs:
           Write-Host "==================================================================" -ForegroundColor Green
           Write-Host "🚀 INTERACTIVE RDP WORKSTATION IS LIVE!" -ForegroundColor Green
           Write-Host "=================================================================="
-          Write-Host "1. Open 'Windows App' (formerly Remote Desktop) on your Mac."
+          Write-Host "1. Open Windows App (formerly Remote Desktop) on your Mac."
           Write-Host "2. Add a new PC, and enter the following address:"
           Write-Host "   👉 $ConnectUrl" -ForegroundColor Yellow
           Write-Host "3. Log in with the following credentials:"
           Write-Host "   👤 Username: runneradmin"
           Write-Host "   🔑 Password: TestWindowsPass123!"
           Write-Host "=================================================================="
-          Write-Host "Note: When you are finished, click 'Cancel workflow' on GitHub."
+          Write-Host "Note: When you are finished, click Cancel workflow on GitHub."
           Write-Host "=================================================================="
           
           # J. Keep the runner active in an infinite loop (it automatically halts after max 6 hours)
