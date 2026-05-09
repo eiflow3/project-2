@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:archive/archive.dart';
 
 /// Helpers is a utility class providing general helpers like formatting, validation,
 /// and security hashing functions. Doing this prevents repetitive boilerplates in widgets.
@@ -57,5 +59,40 @@ class Helpers {
   static bool isValidString(String? input) {
     if (input == null) return false;
     return input.trim().isNotEmpty;
+  }
+
+  /// Encodes SQLite raw database bytes into a standard compressed ZIP archive stream.
+  /// Works flawlessly on both web and native desktop sandboxes because it relies on pure-Dart memory buffers.
+  static Uint8List createBackupZip(Uint8List dbBytes) {
+    // Initialize standard pure-Dart archive virtual folder
+    final Archive archive = Archive();
+    
+    // Package our DB file into the virtual folder's directory structure
+    final ArchiveFile file = ArchiveFile(
+      'offline_order_manager.db',
+      dbBytes.length,
+      dbBytes,
+    );
+    archive.addFile(file);
+    
+    // Encode and compress the archive directory using the native ZIP spec
+    final List<int>? zipBytes = ZipEncoder().encode(archive);
+    return Uint8List.fromList(zipBytes!);
+  }
+
+  /// Decodes and extracts the raw SQLite database bytes from a compressed ZIP backup archive.
+  /// Returns null if the ZIP file does not contain a valid 'offline_order_manager.db' file.
+  static Uint8List? extractDbFromZip(Uint8List zipBytes) {
+    // Decode the zip bytes in memory
+    final Archive archive = ZipDecoder().decodeBytes(zipBytes);
+    
+    // Scan all files contained in the zip archive for our database file name
+    for (final ArchiveFile file in archive) {
+      if (file.name == 'offline_order_manager.db') {
+        // Return the extracted decompressed raw bytes
+        return file.content as Uint8List;
+      }
+    }
+    return null;
   }
 }

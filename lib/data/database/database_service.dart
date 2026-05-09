@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -179,6 +180,30 @@ class DatabaseService {
         'updated_at': DateTime.now().toIso8601String(),
       });
     });
+  }
+
+  /// Returns the exact database file path (or database name on web).
+  Future<String> getDatabasePath() async {
+    if (kIsWeb) {
+      return 'offline_order_manager.db';
+    } else {
+      String databasesPath = await getDatabasesPath();
+      return join(databasesPath, 'offline_order_manager.db');
+    }
+  }
+
+  /// Safely imports database bytes by closing the active connection,
+  /// writing the new bytes, and re-initializing the connection.
+  Future<void> importDatabaseBytes(Uint8List bytes) async {
+    // 1. Close current database
+    await close();
+
+    // 2. Write database bytes using the factory (supports both FFI desktop & WASM Web!)
+    String path = await getDatabasePath();
+    await databaseFactory.writeDatabaseBytes(path, bytes);
+
+    // 3. Re-initialize database connection
+    await database;
   }
 
   /// Safely closes the database connection stream during app shutdown or logout.

@@ -94,7 +94,7 @@ class _SetupAdminScreenState extends State<SetupAdminScreen> {
                           borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                         ),
                         child: const Text(
-                          'Step 1 of 2',
+                          'Step 2 of 3',
                           style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ),

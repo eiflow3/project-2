@@ -169,7 +169,7 @@ class _SetupProductsScreenState extends State<SetupProductsScreen> {
                           borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                         ),
                         child: const Text(
-                          'Step 2 of 2',
+                          'Step 3 of 3',
                           style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ),

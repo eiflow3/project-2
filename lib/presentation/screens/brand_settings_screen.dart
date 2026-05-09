@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/style.dart';
 import '../../providers/merchant_provider.dart';
+import '../../providers/backup_provider.dart';
+import '../../providers/product_provider.dart';
+import '../../providers/order_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/custom_text_field.dart';
 
@@ -232,6 +236,165 @@ class _BrandSettingsScreenState extends State<BrandSettingsScreen> {
                                 ],
                               ),
                             ),
+                            const SizedBox(height: 20),
+
+                            // Data Portability / Backup & Restore Card
+                            Consumer<BackupProvider>(
+                              builder: (context, backupProvider, child) {
+                                return GlassCard(
+                                  margin: EdgeInsets.zero,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Row(
+                                        children: [
+                                          Icon(Icons.sync_rounded, color: AppColors.primaryLight, size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Data Management & Backups', style: AppStyles.heading2),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Export or import your entire offline workspace (ledger records, products inventory, and custom branding settings) via compressed ZIP archives to easily migrate between devices.',
+                                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                      ),
+                                      const SizedBox(height: 20),
+
+                                      // Active feedback banner
+                                      if (backupProvider.errorMessage != null)
+                                        Container(
+                                          margin: const EdgeInsets.only(bottom: 16),
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.error.withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
+                                            border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  backupProvider.errorMessage!,
+                                                  style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w500),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.close, color: AppColors.error, size: 16),
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                onPressed: () => backupProvider.clearMessages(),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+
+                                      if (backupProvider.successMessage != null)
+                                        Container(
+                                          margin: const EdgeInsets.only(bottom: 16),
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.success.withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
+                                            border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 18),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  backupProvider.successMessage!,
+                                                  style: const TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w500),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.close, color: AppColors.success, size: 16),
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                onPressed: () => backupProvider.clearMessages(),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+
+                                      // Row of Actions
+                                      Row(
+                                        children: [
+                                          // Export Action Button
+                                          Expanded(
+                                            child: ElevatedButton.icon(
+                                              onPressed: backupProvider.isLoading
+                                                  ? null
+                                                  : () async {
+                                                      await backupProvider.exportBackup();
+                                                    },
+                                              icon: backupProvider.isLoading
+                                                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                                  : const Icon(Icons.backup_rounded, color: Colors.white, size: 16),
+                                              label: const Text(
+                                                'EXPORT ZIP BACKUP',
+                                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
+                                              ),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: AppColors.primary,
+                                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusMedium)),
+                                                elevation: 0,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          // Import Action Button
+                                          Expanded(
+                                            child: OutlinedButton.icon(
+                                              onPressed: backupProvider.isLoading
+                                                  ? null
+                                                  : () async {
+                                                      bool success = await backupProvider.importBackup(() async {
+                                                        // Callback to reload all providers on success
+                                                        final mProv = Provider.of<MerchantProvider>(context, listen: false);
+                                                        final pProv = Provider.of<ProductProvider>(context, listen: false);
+                                                        final oProv = Provider.of<OrderProvider>(context, listen: false);
+                                                        final aProv = Provider.of<AuthProvider>(context, listen: false);
+
+                                                        await mProv.loadBranding();
+                                                        await pProv.loadProducts();
+                                                        await oProv.loadOrdersAndStats();
+                                                        await aProv.checkInitialState();
+                                                      });
+                                                      
+                                                      if (success && mounted) {
+                                                        // Force state update to re-populate controllers with the imported config
+                                                        final merchantProvider = Provider.of<MerchantProvider>(context, listen: false);
+                                                        if (merchantProvider.activeConfig != null) {
+                                                          _storeNameController.text = merchantProvider.activeConfig!.storeName;
+                                                          _storeTaglineController.text = merchantProvider.activeConfig!.storeTagline;
+                                                          _selectedIconCode = merchantProvider.activeConfig!.storeIcon;
+                                                          setState(() {});
+                                                        }
+                                                      }
+                                                    },
+                                              icon: const Icon(Icons.unarchive_rounded, color: AppColors.primaryLight, size: 16),
+                                              label: const Text(
+                                                'RESTORE ZIP BACKUP',
+                                                style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
+                                              ),
+                                              style: OutlinedButton.styleFrom(
+                                                side: const BorderSide(color: AppColors.primary, width: 1.0),
+                                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusMedium)),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                },
+                              ),
                           ],
                         ),
                       ),

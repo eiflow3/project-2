@@ -13,9 +13,11 @@ import 'core/theme/style.dart';
 import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/order_provider.dart';
+import 'providers/backup_provider.dart';
 
 // Authentication & Onboarding Screens
 import 'presentation/screens/setup/setup_admin_screen.dart';
+import 'presentation/screens/setup/setup_branding_screen.dart';
 import 'presentation/screens/login_screen.dart';
 
 // Core App Functional Screens
@@ -54,6 +56,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => MerchantProvider()),
+        ChangeNotifierProvider(create: (_) => BackupProvider()),
       ],
       child: const OrderFlowApp(),
     ),
@@ -114,8 +117,8 @@ class AuthRouteGuard extends StatelessWidget {
       case AuthStatus.loading:
         return const AppPreloadingScreen();
       case AuthStatus.unregistered:
-        // No administrative master account present, show Setup Wizard
-        return const SetupAdminScreen();
+        // No administrative master account present, show branding setup first
+        return const SetupBrandingScreen();
       case AuthStatus.unauthenticated:
         // Admin registered, but active session is locked, show Login Screen
         return const LoginScreen();
