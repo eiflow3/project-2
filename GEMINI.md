@@ -48,3 +48,4 @@ Since this application targets a premium merchant desk-experience, any visual as
 
 
 # Github
+## Avoid atomic commits on every changes unless requested by the user.
