@@ -26,6 +26,7 @@ import 'presentation/screens/products_list_screen.dart';
 
 // Shared Presentation Widgets
 import 'presentation/widgets/navigation_sidebar.dart';
+import 'presentation/widgets/app_preloading_screen.dart';
 
 void main() {
   // Ensure Flutter engine bindings are initialized
@@ -106,11 +107,7 @@ class AuthRouteGuard extends StatelessWidget {
     // Evaluate the admin setup and login status
     switch (authProvider.status) {
       case AuthStatus.loading:
-        return const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(color: AppColors.primaryLight),
-          ),
-        );
+        return const AppPreloadingScreen();
       case AuthStatus.unregistered:
         // No administrative master account present, show Setup Wizard
         return const SetupAdminScreen();
