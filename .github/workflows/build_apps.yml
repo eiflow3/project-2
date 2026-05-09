@@ -32,7 +32,7 @@ jobs:
       - name: Compress macOS Application Folder
         run: |
           cd build/macos/Build/Products/Release
-          zip -r ../../../../../OrderFlow_Mac.zip order_management_system.app
+          zip -r ../../../../../OrderFlow_Mac.zip *.app
 
       - name: Upload Mac Executable Artifact
         uses: actions/upload-artifact@v4
