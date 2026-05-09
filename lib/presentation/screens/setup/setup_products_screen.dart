@@ -7,6 +7,7 @@ import '../../../data/models/product_model.dart';
 import '../../../providers/product_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../../main.dart';
 
 /// SetupProductsScreen allows merchants to register their inventory items during first-time launch.
 /// It supports dynamic custom columns (weight, color, etc.) using key-value pair forms,
@@ -125,9 +126,11 @@ class _SetupProductsScreenState extends State<SetupProductsScreen> {
     bool success = await productProvider.setupInitialProducts(_stagedProducts);
 
     if (success && mounted) {
-      // Setup complete! Since we added products, we reload the parent widgets
-      // which will trigger the AuthStatus checker, transitioning to authenticated!
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      // Setup complete! Since we added products, we replace this setup route 
+      // with AuthRouteGuard, which will check the AuthStatus and transition directly to the authenticated workspace!
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AuthRouteGuard()),
+      );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
