@@ -1,0 +1,96 @@
+name: Interactive Windows Build RDP
+
+on:
+  # Manual trigger from GitHub Actions UI to avoid wasting runner minutes
+  workflow_dispatch:
+
+jobs:
+  build-and-rdp:
+    runs-on: windows-latest # Boot up a Windows Server runner with build environments pre-installed
+    steps:
+      # Step 1: Checkout repository files to the runner
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Flutter SDK matching your stable setup
+      - name: Install Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # Step 3: Enable Windows desktop build target
+      - name: Enable Windows Desktop Build Support
+        run: flutter config --enable-windows-desktop
+
+      # Step 4: Fetch all required packages
+      - name: Fetch Dependencies
+        run: flutter pub get
+
+      # Step 5: Setup FFI / Web SQLite binaries
+      - name: Setup Web/FFI Binaries
+        run: dart run sqflite_common_ffi_web:setup
+
+      # Step 6: Compile the release-ready Windows version
+      - name: Build Windows Release
+        run: flutter build windows --release
+
+      # Step 7: Compress and package the binaries into a ZIP
+      - name: Package Windows files into ZIP
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ./OrderFlow_Windows.zip
+
+      # Step 8: Upload the build artifact to GitHub so it is permanently saved
+      - name: Upload Windows Executable Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows_App_USB
+          path: OrderFlow_Windows.zip
+
+      # Step 9: Configure and start the Remote Desktop Server (RDP) & tunnel it through ngrok
+      - name: Start Interactive Remote Desktop Tunnel
+        shell: powershell
+        run: |
+          # A. Enable Remote Desktop (RDP) access in the system Registry
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          
+          # B. Allow Remote Desktop traffic through the local firewall
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          
+          # C. Update the password for the native administrator account 'runneradmin'
+          $Password = ConvertTo-SecureString "TestWindowsPass123!" -AsPlainText -Force
+          Set-LocalUser -Name "runneradmin" -Password $Password
+          
+          # D. Download and extract the latest ngrok windows agent
+          Invoke-WebRequest -Uri "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip" -OutFile "ngrok.zip"
+          Expand-Archive -Path "ngrok.zip" -DestinationPath "."
+          
+          # E. Authenticate ngrok using your secret token from GitHub Secrets
+          .\ngrok.exe config add-authtoken "${{ secrets.NGROK_AUTH_TOKEN }}"
+          
+          # F. Spawn the ngrok tunnel forwarding RDP (port 3389) as a background process
+          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -NoNewWindow
+          
+          # G. Wait a few seconds for ngrok to initialize and resolve DNS
+          Start-Sleep -Seconds 5
+          
+          # H. Fetch the public connection endpoint from the local ngrok daemon API
+          $Response = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels"
+          $PublicUrl = $Response.tunnels.public_url
+          $ConnectUrl = $PublicUrl -replace 'tcp://', ''
+          
+          # I. Print out our visual connection banner containing host and port details
+          Write-Host "==================================================================" -ForegroundColor Green
+          Write-Host "🚀 INTERACTIVE RDP WORKSTATION IS LIVE!" -ForegroundColor Green
+          Write-Host "=================================================================="
+          Write-Host "1. Open 'Microsoft Remote Desktop' on your Mac."
+          Write-Host "2. Add a new PC, and enter the following address:"
+          Write-Host "   👉 $ConnectUrl" -ForegroundColor Yellow
+          Write-Host "3. Log in with the following credentials:"
+          Write-Host "   👤 Username: runneradmin"
+          Write-Host "   🔑 Password: TestWindowsPass123!"
+          Write-Host "=================================================================="
+          Write-Host "Note: When you are finished, click 'Cancel workflow' on GitHub."
+          Write-Host "=================================================================="
+          
+          # J. Keep the runner active in an infinite loop (it automatically halts after max 6 hours)
+          while ($true) { Start-Sleep -Seconds 30 }
