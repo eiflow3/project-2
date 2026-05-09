@@ -5,6 +5,7 @@ import '../../../core/theme/style.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../data/models/product_model.dart';
 import '../../../providers/product_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../../main.dart';
@@ -126,6 +127,9 @@ class _SetupProductsScreenState extends State<SetupProductsScreen> {
     bool success = await productProvider.setupInitialProducts(_stagedProducts);
 
     if (success && mounted) {
+      // Finalize the AuthProvider state to unlock the core workspace panel
+      Provider.of<AuthProvider>(context, listen: false).finalizeOnboarding();
+
       // Setup complete! Since we added products, we replace this setup route 
       // with AuthRouteGuard, which will check the AuthStatus and transition directly to the authenticated workspace!
       Navigator.of(context).pushReplacement(

@@ -66,7 +66,8 @@ class AuthProvider with ChangeNotifier {
     bool success = await _userRepo.registerMasterAccount(newAdmin);
     if (success) {
       _currentUser = newAdmin;
-      _status = AuthStatus.authenticated;
+      // Keep state as unregistered so the onboarding route remains active for Step 2 (Product Catalog Staging)
+      _status = AuthStatus.unregistered;
       _loginError = null;
     } else {
       _status = AuthStatus.unregistered;
@@ -74,6 +75,13 @@ class AuthProvider with ChangeNotifier {
     }
     notifyListeners();
     return success;
+  }
+
+  /// Finalizes the entire 2-stage setup. Sets status to authenticated
+  /// and unlocks the main application workspace.
+  void finalizeOnboarding() {
+    _status = AuthStatus.authenticated;
+    notifyListeners();
   }
 
   /// Verifies login credentials. Compares entries with SHA-256 hashes inside the repository.

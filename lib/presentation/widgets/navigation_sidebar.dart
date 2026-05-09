@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/style.dart';
+import '../../core/utils/helpers.dart';
+import '../../data/models/user_model.dart';
 import '../../providers/auth_provider.dart';
 
 /// NavigationSidebar is the primary menu layout for desktop viewports.
@@ -255,39 +257,161 @@ class NavigationSidebar extends StatelessWidget {
   }
 
   void _showResetDialog(BuildContext context) {
+    // Controller to capture PIN/Password input
+    final TextEditingController verifyController = TextEditingController();
+    
     showDialog(
       context: context,
+      barrierDismissible: false, // Force active choice to avoid accidental clicks
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: AppColors.surface,
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('Reset Application?'),
-            ],
-          ),
-          content: const Text(
-            'This will permanently delete all your sales ledger entries, products catalog, and custom admin credentials. The application will be restored back to first-time setup.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel', style: TextStyle(color: AppColors.textPrimary)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                Provider.of<AuthProvider>(context, listen: false).resetApplication();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusSmall)),
+        UserModel? masterAccount;
+        String? validationError;
+        bool isLoadingMaster = true;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Load master account on first dialog build
+            if (isLoadingMaster) {
+              Provider.of<AuthProvider>(context, listen: false)
+                  .getMasterAccount()
+                  .then((user) {
+                setState(() {
+                  masterAccount = user;
+                  isLoadingMaster = false;
+                });
+              });
+            }
+
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              // Use precise Swiss style border matching our global theme refactor
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+                side: const BorderSide(color: AppColors.surfaceLight, width: 1.0),
               ),
-              child: const Text('Reset Everything', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-            ),
-          ],
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 22),
+                  SizedBox(width: 8),
+                  Text(
+                    'Confirm Reset Database',
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 400,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'This will permanently delete all sales ledgers, products catalogs, and administrative credentials. The application will be completely restored back to the clean first-time setup wizard.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                    ),
+                    const SizedBox(height: 20),
+                    if (isLoadingMaster)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: CircularProgressIndicator(color: AppColors.primaryLight, strokeWidth: 2),
+                        ),
+                      )
+                    else ...[
+                      Text(
+                        masterAccount?.authType == 'PIN'
+                            ? 'Enter Administrator PIN to authorize:'
+                            : 'Enter Administrator Password to authorize:',
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: verifyController,
+                        obscureText: true,
+                        cursorColor: AppColors.primaryLight,
+                        style: AppStyles.bodyPrimary,
+                        keyboardType: masterAccount?.authType == 'PIN'
+                            ? TextInputType.number
+                            : TextInputType.text,
+                        decoration: AppStyles.customInputDecoration(
+                          labelText: masterAccount?.authType == 'PIN' ? 'Confirm PIN' : 'Confirm Password',
+                          prefixIcon: masterAccount?.authType == 'PIN' ? Icons.dialpad : Icons.lock_outline,
+                        ).copyWith(
+                          errorText: validationError,
+                          errorStyle: const TextStyle(color: AppColors.error, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    verifyController.dispose();
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                ),
+                ElevatedButton(
+                  onPressed: isLoadingMaster
+                      ? null
+                      : () async {
+                          final input = verifyController.text;
+                          if (input.isEmpty) {
+                            setState(() {
+                              validationError = masterAccount?.authType == 'PIN'
+                                  ? 'Please enter your administrator PIN.'
+                                  : 'Please enter your administrator password.';
+                            });
+                            return;
+                          }
+
+                          // Hash and verify credentials securely matching database entries
+                          final inputHash = Helpers.hashSha256(input);
+                          final correctHash = masterAccount?.authType == 'PIN'
+                              ? masterAccount?.pinHash
+                              : masterAccount?.passwordHash;
+
+                          if (inputHash == correctHash) {
+                            // Dispose first to avoid resource leaks
+                            verifyController.dispose();
+                            Navigator.of(dialogContext).pop();
+                            
+                            // Perform database deletion
+                            await Provider.of<AuthProvider>(context, listen: false).resetApplication();
+                            
+                            // Notify user of successful database purge
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Application reset successfully! Database cleared.'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          } else {
+                            setState(() {
+                              validationError = masterAccount?.authType == 'PIN'
+                                  ? 'Incorrect administrative PIN.'
+                                  : 'Incorrect administrative password.';
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusSmall)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  child: const Text(
+                    'Reset Everything',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
