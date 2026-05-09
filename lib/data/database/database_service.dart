@@ -94,6 +94,17 @@ class DatabaseService {
       );
     ''');
 
+    // 4. Create merchant branding config table
+    await db.execute('''
+      CREATE TABLE merchant_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        store_name TEXT NOT NULL,
+        store_tagline TEXT NOT NULL,
+        store_icon TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    ''');
+
     // Add a default system user to skip manual CLI inserts (just in case)
     // The presentation setup wizard will prompt to overwrite this default
     await db.insert('users', {
@@ -101,6 +112,14 @@ class DatabaseService {
       'auth_type': 'PIN',
       'pin_hash': '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // SHA-256 for '1234'
       'created_at': DateTime.now().toIso8601String(),
+    });
+
+    // Pre-populate with default branding (e.g. GilNor Gas Store as default!)
+    await db.insert('merchant_config', {
+      'store_name': 'GilNor Gas Store',
+      'store_tagline': 'OFFLINE LEDGER & POS SYSTEM',
+      'store_icon': 'GAS',
+      'updated_at': DateTime.now().toIso8601String(),
     });
   }
 
@@ -115,13 +134,23 @@ class DatabaseService {
       await txn.execute('DELETE FROM products;');
       // 3. Clear security credentials
       await txn.execute('DELETE FROM users;');
+      // 4. Clear merchant branding
+      await txn.execute('DELETE FROM merchant_config;');
 
-      // 4. Re-inject temporary default credentials to enable setup flow
+      // 5. Re-inject temporary default credentials to enable setup flow
       await txn.insert('users', {
         'username': 'admin',
         'auth_type': 'PIN',
         'pin_hash': '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // SHA-256 for '1234'
         'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // 6. Re-inject temporary default branding to enable custom client onboarding
+      await txn.insert('merchant_config', {
+        'store_name': 'GilNor Gas Store',
+        'store_tagline': 'OFFLINE LEDGER & POS SYSTEM',
+        'store_icon': 'GAS',
+        'updated_at': DateTime.now().toIso8601String(),
       });
     });
   }

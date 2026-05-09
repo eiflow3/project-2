@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/style.dart';
+import '../../providers/merchant_provider.dart';
 
 /// AppPreloadingScreen displays a premium, customized intro and database loading sequence
 /// during startup for GilNor Gas Store. It simulates active milestoning for local db connections.
@@ -14,21 +16,24 @@ class AppPreloadingScreen extends StatefulWidget {
 
 class _AppPreloadingScreenState extends State<AppPreloadingScreen> {
   int _currentStep = 0;
-  
-  // Real-world local sqlite startup steps
-  final List<String> _steps = [
-    'Connecting local database FFI bindings...',
-    'Checking administrator credentials database...',
-    'Loading active inventory catalogs...',
-    'Initializing secure POS ledger systems...',
-    'Launching GilNor Gas Store workspace...'
-  ];
-
+  late List<String> _steps;
   late Timer _timer;
 
   @override
   void initState() {
     super.initState();
+    // Retrieve active white-labeled store name for startup checkpoint step
+    final merchantProvider = Provider.of<MerchantProvider>(context, listen: false);
+    final String storeName = merchantProvider.activeConfig?.storeName ?? 'GilNor Gas Store';
+
+    _steps = [
+      'Connecting local database FFI bindings...',
+      'Checking administrator credentials database...',
+      'Loading active inventory catalogs...',
+      'Initializing secure POS ledger systems...',
+      'Launching $storeName workspace...'
+    ];
+
     // Progress through database loading milestones every 600ms to sync with our 3-second startup sequence
     _timer = Timer.periodic(const Duration(milliseconds: 600), (timer) {
       if (_currentStep < _steps.length - 1) {
@@ -49,6 +54,11 @@ class _AppPreloadingScreenState extends State<AppPreloadingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final merchantProvider = Provider.of<MerchantProvider>(context);
+    final String storeName = merchantProvider.activeConfig?.storeName ?? 'GilNor Gas Store';
+    final String storeTagline = merchantProvider.activeConfig?.storeTagline ?? 'OFFLINE LEDGER & POS SYSTEM';
+    final IconData storeIcon = merchantProvider.activeConfig?.getMaterialIcon() ?? Icons.local_fire_department_rounded;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -92,18 +102,19 @@ class _AppPreloadingScreenState extends State<AppPreloadingScreen> {
                       )
                     ],
                   ),
-                  child: const Icon(
-                    Icons.local_fire_department_rounded, // Customized fire/gas store icon
+                  child: Icon(
+                    storeIcon, // Dynamic customized brand icon
                     color: AppColors.primaryLight,
                     size: 54,
                   ),
                 ),
                 const SizedBox(height: 24),
                 
-                // GilNor Store Typography
-                const Text(
-                  'GILNOR GAS STORE',
-                  style: TextStyle(
+                // Store Typography
+                Text(
+                  storeName.toUpperCase(), // Dynamic customized brand name
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
@@ -111,9 +122,10 @@ class _AppPreloadingScreenState extends State<AppPreloadingScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'OFFLINE LEDGER & POS SYSTEM',
-                  style: TextStyle(
+                Text(
+                  storeTagline.toUpperCase(), // Dynamic customized brand tagline
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 9,
                     fontWeight: FontWeight.bold,

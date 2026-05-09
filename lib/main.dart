@@ -23,6 +23,10 @@ import 'presentation/screens/dashboard_screen.dart';
 import 'presentation/screens/order_entry_screen.dart';
 import 'presentation/screens/orders_list_screen.dart';
 import 'presentation/screens/products_list_screen.dart';
+import 'presentation/screens/brand_settings_screen.dart';
+
+// Storage and Repository Providers
+import 'providers/merchant_provider.dart';
 
 // Shared Presentation Widgets
 import 'presentation/widgets/navigation_sidebar.dart';
@@ -49,6 +53,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => MerchantProvider()),
       ],
       child: const OrderFlowApp(),
     ),
@@ -139,6 +144,7 @@ class _MainWorkspacePanelState extends State<MainWorkspacePanel> {
     OrderEntryScreen(),
     OrdersListScreen(),
     ProductsListScreen(),
+    BrandSettingsScreen(),
   ];
 
   @override
@@ -262,6 +268,11 @@ class _MainWorkspacePanelState extends State<MainWorkspacePanel> {
                         icon: Icon(Icons.inventory_2_outlined),
                         selectedIcon: Icon(Icons.inventory_2),
                         label: 'Inventory',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.palette_outlined),
+                        selectedIcon: Icon(Icons.palette),
+                        label: 'Branding',
                       ),
                     ],
                   ),

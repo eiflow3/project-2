@@ -6,10 +6,11 @@ This document details the SQLite database design for our offline Flutter Order M
 
 ## Database Architecture Overview
 
-The offline storage consists of three core tables:
+The offline storage consists of four core tables:
 1. `users`: Stores admin/master account credentials (PIN or Password hashes) and session settings.
 2. `products`: Stores the merchant's custom inventory including unit costs, retail prices, stock quantity, and dynamically added column attributes.
 3. `orders`: Tracks client sales transactions, capturing buyer profiles, specific items purchased, price-aggregations, fulfillment methods, and progress statuses.
+4. `merchant_config`: Stores white-label settings allowing the system to dynamically brand itself on startup (Store Name, tagline, and chosen logo code).
 
 ```mermaid
 erDiagram
@@ -41,6 +42,13 @@ erDiagram
         TEXT delivery_rider "Optional"
         TEXT status "PENDING, COMPLETED, CANCELLED"
         TEXT created_at
+    }
+    MERCHANT_CONFIG {
+        INTEGER id PK
+        TEXT store_name
+        TEXT store_tagline
+        TEXT store_icon
+        TEXT updated_at
     }
 
     PRODUCTS ||--o{ ORDERS : "linked to"
@@ -94,6 +102,19 @@ Captures store orders. The price is auto-computed based on the active product se
 | `delivery_rider`| `TEXT` | `NULL` | Name/ID of the courier (optional). |
 | `status` | `TEXT` | `NOT NULL DEFAULT 'PENDING'` | Operational state: `'PENDING'`, `'COMPLETED'`, or `'CANCELLED'`. |
 | `created_at` | `TEXT` | `NOT NULL` | Transaction timestamp. |
+
+---
+
+### 4. `merchant_config` Table
+Houses dynamic merchant-specific branding configs to support full white-label distribution.
+
+| Column Name | SQLite Data Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique row identifier. |
+| `store_name` | `TEXT` | `NOT NULL` | Customized store brand name. |
+| `store_tagline` | `TEXT` | `NOT NULL` | Customized brand tagline or operational subtitle. |
+| `store_icon` | `TEXT` | `NOT NULL` | Coded label representing standard brand emblems (e.g. `'GAS'`, `'BAG'`, `'CART'`). |
+| `updated_at` | `TEXT` | `NOT NULL` | Standard ISO-8601 timestamp tracking when settings changed. |
 
 ---
 

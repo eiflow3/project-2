@@ -7,6 +7,7 @@ import '../../data/models/order_model.dart';
 import '../../data/models/product_model.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/merchant_provider.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/custom_text_field.dart';
 
@@ -613,30 +614,36 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
 
   /// Builds details display receipt sidebar card designed to look like a thermal ticket.
   Widget _buildReceiptSummary() {
+    final merchantProvider = Provider.of<MerchantProvider>(context);
+    final String storeName = merchantProvider.activeConfig?.storeName ?? 'OrderFlow';
+    final String storeTagline = merchantProvider.activeConfig?.storeTagline ?? 'OFFLINE SYSTEM';
+
     return GlassCard(
       margin: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Receipt Header
-          const Center(
+          Center(
             child: Column(
               children: [
-                Icon(Icons.receipt_long_rounded, color: AppColors.textSecondary, size: 28),
-                SizedBox(height: 10),
+                const Icon(Icons.receipt_long_rounded, color: AppColors.textSecondary, size: 28),
+                const SizedBox(height: 10),
                 Text(
-                  'STORE CHECKOUT INVOICE',
-                  style: TextStyle(
+                  storeName.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     color: AppColors.textPrimary,
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'OFFLINE LEDGER TRANSACTION',
-                  style: TextStyle(
+                  storeTagline.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 9,
                     letterSpacing: 1.0,

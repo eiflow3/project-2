@@ -5,6 +5,7 @@ import '../../core/theme/style.dart';
 import '../../core/utils/helpers.dart';
 import '../../data/models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/merchant_provider.dart';
 
 /// NavigationSidebar is the primary menu layout for desktop viewports.
 /// It displays the brand logo, lists accessible workspace panels, shows the logged-in
@@ -22,7 +23,11 @@ class NavigationSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final merchantProvider = Provider.of<MerchantProvider>(context);
     final String username = authProvider.currentUser?.username ?? 'Admin';
+    final String storeName = merchantProvider.activeConfig?.storeName ?? 'OrderFlow';
+    final String storeTagline = merchantProvider.activeConfig?.storeTagline ?? 'OFFLINE SYSTEM';
+    final IconData storeIcon = merchantProvider.activeConfig?.getMaterialIcon() ?? Icons.storefront;
 
     return Container(
       width: 250,
@@ -45,30 +50,34 @@ class NavigationSidebar extends StatelessWidget {
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                   ),
-                  child: const Icon(
-                    Icons.storefront,
+                  child: Icon(
+                    storeIcon,
                     color: Colors.white,
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'OrderFlow',
-                        style: TextStyle(
+                        storeName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           color: AppColors.textPrimary,
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        'OFFLINE SYSTEM',
-                        style: TextStyle(
+                        storeTagline,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           color: AppColors.primaryLight,
-                          fontSize: 10,
+                          fontSize: 9,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.2,
                         ),
@@ -111,6 +120,12 @@ class NavigationSidebar extends StatelessWidget {
                   icon: Icons.inventory_2_outlined,
                   activeIcon: Icons.inventory_2,
                   title: 'Inventory',
+                ),
+                _buildMenuItem(
+                  index: 4,
+                  icon: Icons.palette_outlined,
+                  activeIcon: Icons.palette,
+                  title: 'Store Settings',
                 ),
               ],
             ),

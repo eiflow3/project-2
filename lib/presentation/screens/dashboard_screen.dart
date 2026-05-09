@@ -5,6 +5,7 @@ import '../../core/theme/style.dart';
 import '../../core/utils/helpers.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/merchant_provider.dart';
 import '../widgets/glass_card.dart';
 
 /// DashboardScreen is the principal landing view of the administrative workspace.
@@ -157,6 +158,9 @@ class DashboardScreen extends StatelessWidget {
 
   /// Builds a welcoming visual banner containing live system health markers and manual sync utilities.
   Widget _buildDynamicHeader(BuildContext context, OrderProvider orderProvider) {
+    final merchantProvider = Provider.of<MerchantProvider>(context);
+    final String storeName = merchantProvider.activeConfig?.storeName ?? 'Workspace';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -174,9 +178,11 @@ class DashboardScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text(
-                      'Welcome to Workspace',
-                      style: TextStyle(
+                    Text(
+                      'Welcome to $storeName',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
