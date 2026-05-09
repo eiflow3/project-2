@@ -50,7 +50,7 @@ Responsible for persistence, database management, and SQL interaction.
 * [data/models/merchant_model.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/models/merchant_model.dart) - Store configurations model representing white-label branding variables. Map codenames (e.g. `FLAME`, `GAS`, `STORE`, `BAG`) directly to beautiful Material design icons.
 * [data/repository/user_repository.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/repository/user_repository.dart) - SQLite query interface for administrative credentials. Manages password/PIN checks, master account creation, and validation checks.
 * [data/repository/product_repository.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/repository/product_repository.dart) - SQLite query interface for products. Executes inserts, updates, deletes, and fetch operations.
-* [data/repository/order_repository.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/repository/order_repository.dart) - SQLite query interface for orders. Handles critical transactional operations (e.g., placing an order with safe quantity stock decrements and reverting stock on cancellation). Includes complex dashboard aggregation queries.
+* [data/repository/order_repository.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/repository/order_repository.dart) - SQLite query interface for orders. Handles critical transactional operations (e.g., placing an order with rigorous database-level stock validation checks, and restocking on cancellation). Includes complex dashboard aggregation queries.
 
 ### Providers Layer (`lib/providers/`)
 Reactivity handlers acting as the State Management controllers using ChangeNotifier.
@@ -201,7 +201,7 @@ CREATE TABLE merchant_config (
 * `totalOrdersCount`: Counter metric.
 * `pendingOrdersCount`: Filtered state counter.
 * `topProducts`: Ranked analytical array.
-* `createOrder(order, onStockUpdated)`: Places transaction order using clean stock constraints.
+* `createOrder(order, onStockUpdated)`: Places transaction order with rigorous database-level validation checks.
 * `changeOrderStatus(id, newStatus, onStockUpdated)`: Safe transaction handling (such as auto-restocking on cancel).
 
 ---

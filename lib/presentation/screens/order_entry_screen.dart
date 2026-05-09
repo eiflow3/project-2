@@ -33,6 +33,7 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
   String _fulfillmentType = 'WALKIN'; // 'WALKIN' or 'DELIVERY'
   String _orderStatus = 'PENDING';     // 'PENDING' or 'COMPLETED'
   double _computedPrice = 0.0;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -58,6 +59,7 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
   /// Commits the customer order to SQLite via native FFI transaction bindings.
   /// Automatically rolls back on validation or inventory failure.
   Future<void> _submitOrder() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
     if (_selectedProduct == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,6 +81,10 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
       );
       return;
     }
+
+    setState(() {
+      _isSubmitting = true;
+    });
 
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
@@ -116,11 +122,17 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
         _fulfillmentType = 'WALKIN';
         _orderStatus = 'PENDING';
         _computedPrice = 0.0;
+        _isSubmitting = false;
       });
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(orderProvider.errorMessage ?? 'Transaction log failure.'), backgroundColor: AppColors.error),
-      );
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(orderProvider.errorMessage ?? 'Transaction log failure.')),
+        );
+      }
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
 

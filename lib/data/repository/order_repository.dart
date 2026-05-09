@@ -46,11 +46,12 @@ class OrderRepository {
 
         final int currentQty = products.first['quantity'] as int;
         
-        // If stock is sufficient (or if stock is default/unlimited, e.g., 9999)
-        // We decrement the stock by the ordered quantity.
-        // (Note: If stock is 1 and user orders, we check if they want to block,
-        // or just let the stock go negative or cap at 0. Let's cap at 0 or prevent overflow)
-        final int newQty = (currentQty - order.quantity).clamp(0, 999999);
+        // Enforce strict stock limit inside SQL transaction
+        if (currentQty < order.quantity) {
+          throw Exception("Insufficient stock: $currentQty units available, but requested ${order.quantity}.");
+        }
+
+        final int newQty = currentQty - order.quantity;
 
         // 2. Decrement the product stock
         await txn.update(
@@ -116,7 +117,11 @@ class OrderRepository {
           );
           if (products.isNotEmpty) {
             final int currentQty = products.first['quantity'] as int;
-            final int newQty = (currentQty - quantity).clamp(0, 999999);
+            // Enforce strict stock limit inside SQL transaction
+            if (currentQty < quantity) {
+              throw Exception("Insufficient stock to restore this order: $currentQty units available, but requested $quantity.");
+            }
+            final int newQty = currentQty - quantity;
             await txn.update(
               'products',
               {'quantity': newQty},
