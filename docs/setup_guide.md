@@ -96,11 +96,24 @@ Whenever you commit and push your code to the `main` branch of your repository o
 2. **Windows Application**: Packaged as `OrderFlow_Windows.zip`.
 3. **Android Application**: Packaged as standard `.apk` mobile installer.
 
-### To Prepare a Flash Drive:
+### To Prepare a Flash Drive / Device Distribution:
+
 1. Push your code to your GitHub repo.
 2. Go to the **Actions** tab on your GitHub repo website.
-3. Select the latest build and scroll down to **Artifacts** to download the Mac, Windows, and Android ZIP files.
-4. Unzip them and transfer them straight to your client's USB drive!
+3. Select the latest build and scroll down to the **Artifacts** section at the bottom.
+
+#### 💻 For macOS & Windows Desktop:
+1. Download **`Mac_App_USB`** or **`Windows_App_USB`**.
+2. Unzip the downloaded folder.
+3. Copy the folder directly onto your client's USB flash drive.
+4. On Mac, your client can drag it to applications (and run `xattr -cr` if needed to bypass Gatekeeper). On Windows, double-click `OrderFlow.exe` in the folder to open it instantly.
+
+#### 📱 For Android Mobile Devices:
+1. Download **`Android_App_USB`** from your artifacts (this is the standalone compiled `app-release.apk` installer).
+2. Transfer the `.apk` file directly onto your client's device (you can copy it to their USB flash drive, or send it directly to their phone via WhatsApp, Email, or a shared Google Drive link).
+3. On the client's Android device, open their built-in **Files / File Manager** app and tap the **`app-release.apk`** file.
+4. If Android displays a security prompt saying "installing unknown apps from this source is blocked", tap **Settings** and toggle on **"Allow from this source"** (this is standard for offline standalone apps that are distributed directly instead of through the Google Play Store).
+5. Tap **Install**, and they can launch and use `OrderFlow` completely offline!
 
 ---
 
