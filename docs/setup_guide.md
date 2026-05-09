@@ -109,3 +109,15 @@ Whenever you commit and push your code to the `main` branch of your repository o
 * Since the database is offline, its SQLite database file resides inside your local macOS Application Support directory:
   `~/Library/Application Support/com.example.offline_orders/offline_orders.db`
 * To safeguard your store data, simply copy this file to an external thumb-drive or cloud folder as a backup.
+
+---
+
+## Application Reset & Testing Stage
+
+To facilitate rapid testing of newly compiled releases starting from the first-time Setup Wizard:
+* **Reset Feature**: The application features a built-in **Reset Application** function.
+* **Accessing the Reset Action**:
+  * **Desktop viewports**: Click the **Reset Application** red-outlined button in the bottom section of the left sidebar menu.
+  * **Mobile viewports**: Click the trash/delete **Reset Application** icon button in the top-right corner of the mobile App Bar.
+* **Database Behavior**: This triggers an atomic SQLite transaction that deletes all registered transaction orders, empties the product inventory database, clears the registered master account credentials, and injects the default temporary administrative key (PIN: `1234`).
+* **Instant Redirection**: On success, the UI instantly redirects back to **Step 1 (Administrative Master Registration Setup)**, allowing you to run testing routines from a pristine database environment.

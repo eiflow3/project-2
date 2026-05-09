@@ -175,6 +175,21 @@ class NavigationSidebar extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                // Danger Reset Application Button
+                OutlinedButton.icon(
+                  onPressed: () => _showResetDialog(context),
+                  icon: const Icon(Icons.delete_forever_outlined, size: 16),
+                  label: const Text('Reset Application', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error.withOpacity(0.5), width: 1.2),
+                    minimumSize: const Size.fromHeight(40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -236,6 +251,45 @@ class NavigationSidebar extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showResetDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: AppColors.error),
+              SizedBox(width: 8),
+              Text('Reset Application?'),
+            ],
+          ),
+          content: const Text(
+            'This will permanently delete all your sales ledger entries, products catalog, and custom admin credentials. The application will be restored back to first-time setup.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textPrimary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Provider.of<AuthProvider>(context, listen: false).resetApplication();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusSmall)),
+              ),
+              child: const Text('Reset Everything', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

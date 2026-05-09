@@ -104,6 +104,28 @@ class DatabaseService {
     });
   }
 
+  /// Drops or deletes all data from tables and re-inserts the default admin.
+  /// Used for application reset functionality.
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      // 1. Clear orders ledger
+      await txn.execute('DELETE FROM orders;');
+      // 2. Clear products inventory
+      await txn.execute('DELETE FROM products;');
+      // 3. Clear security credentials
+      await txn.execute('DELETE FROM users;');
+
+      // 4. Re-inject temporary default credentials to enable setup flow
+      await txn.insert('users', {
+        'username': 'admin',
+        'auth_type': 'PIN',
+        'pin_hash': '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // SHA-256 for '1234'
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    });
+  }
+
   /// Safely closes the database connection stream during app shutdown or logout.
   Future<void> close() async {
     if (_database != null) {

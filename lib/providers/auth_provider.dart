@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/utils/helpers.dart';
 import '../data/models/user_model.dart';
 import '../data/repository/user_repository.dart';
+import '../data/database/database_service.dart';
 
 enum AuthStatus {
   loading,
@@ -101,6 +102,24 @@ class AuthProvider with ChangeNotifier {
     _currentUser = null;
     _status = AuthStatus.unauthenticated;
     _loginError = null;
+    notifyListeners();
+  }
+
+  /// Resets the local database transactionally and redirects to the Setup Wizard.
+  Future<void> resetApplication() async {
+    _status = AuthStatus.loading;
+    notifyListeners();
+
+    try {
+      final dbService = DatabaseService();
+      await dbService.clearAllData();
+      _currentUser = null;
+      _status = AuthStatus.unregistered;
+      _loginError = null;
+    } catch (_) {
+      _loginError = "Failed to reset application database.";
+      _status = AuthStatus.unauthenticated;
+    }
     notifyListeners();
   }
 

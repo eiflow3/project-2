@@ -164,6 +164,11 @@ class _MainWorkspacePanelState extends State<MainWorkspacePanel> {
               ),
               actions: [
                 IconButton(
+                  icon: const Icon(Icons.delete_forever_outlined, color: AppColors.error, size: 20),
+                  tooltip: 'Reset Application',
+                  onPressed: () => _showResetDialog(context),
+                ),
+                IconButton(
                   icon: const Icon(Icons.logout, color: AppColors.error, size: 20),
                   tooltip: 'Lock Session',
                   onPressed: () {
@@ -267,6 +272,45 @@ class _MainWorkspacePanelState extends State<MainWorkspacePanel> {
               ),
             )
           : null,
+    );
+  }
+
+  void _showResetDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: AppColors.error),
+              SizedBox(width: 8),
+              Text('Reset Application?'),
+            ],
+          ),
+          content: const Text(
+            'This will permanently delete all your sales ledger entries, products catalog, and custom admin credentials. The application will be restored back to first-time setup.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textPrimary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Provider.of<AuthProvider>(context, listen: false).resetApplication();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusSmall)),
+              ),
+              child: const Text('Reset Everything', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+            ),
+          ],
+        );
+      },
     );
   }
 }
