@@ -82,7 +82,7 @@ jobs:
           Write-Host "==================================================================" -ForegroundColor Green
           Write-Host "🚀 INTERACTIVE RDP WORKSTATION IS LIVE!" -ForegroundColor Green
           Write-Host "=================================================================="
-          Write-Host "1. Open 'Microsoft Remote Desktop' on your Mac."
+          Write-Host "1. Open 'Windows App' (formerly Remote Desktop) on your Mac."
           Write-Host "2. Add a new PC, and enter the following address:"
           Write-Host "   👉 $ConnectUrl" -ForegroundColor Yellow
           Write-Host "3. Log in with the following credentials:"

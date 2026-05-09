@@ -91,7 +91,7 @@ If you prefer to inspect how the application behaves on a clean, native Windows 
 ### How it Works
 1. Create a manually triggered GitHub Actions workflow (`workflow_dispatch`).
 2. The workflow compiles your Windows build, enables Remote Desktop (RDP), starts a secure tunnel using **ngrok**, and displays a public connection string.
-3. You connect directly from your Mac using the **Microsoft Remote Desktop** app (available on the Mac App Store).
+3. You connect directly from your Mac using the **Windows App** (formerly *Microsoft Remote Desktop*, available on the Mac App Store).
 
 ### Step-by-Step Implementation
 
@@ -174,7 +174,7 @@ jobs:
           Write-Host "==================================================================" -ForegroundColor Green
           Write-Host "🚀 NATIVE RDP SERVER IS READY!" -ForegroundColor Green
           Write-Host "=================================================================="
-          Write-Host "1. Connect using Microsoft Remote Desktop on your Mac to:"
+          Write-Host "1. Connect using Windows App (formerly Remote Desktop) on your Mac to:"
           Write-Host "   👉 $ConnectUrl" -ForegroundColor Yellow
           Write-Host "2. Login Credentials:"
           Write-Host "   👤 Username: runneradmin"
@@ -188,11 +188,11 @@ jobs:
 ```
 
 #### Step 3: Connect from your Mac
-1. Install the free **Microsoft Remote Desktop** client from the Mac App Store.
+1. Install the free **Windows App** (formerly *Microsoft Remote Desktop*) from the Mac App Store.
 2. Run your manual workflow on GitHub.
 3. Open the workflow console logs, and find the step **Enable Interactive Remote Desktop**.
 4. Copy the connection host and port (e.g., `0.tcp.ngrok.io:12345`).
-5. Open **Microsoft Remote Desktop**, add a new PC with that PC Name, and use:
+5. Open the **Windows App**, add a new PC with that PC Name, and use:
    * **Username**: `runneradmin`
    * **Password**: `TestWindowsPass123!`
 6. Click connect! You are now physically logging into the Windows VM in the cloud.
