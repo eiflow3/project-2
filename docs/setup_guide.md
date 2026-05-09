@@ -127,10 +127,14 @@ Whenever you commit and push your code to the `main` branch of your repository o
 
 ## Application Reset & Testing Stage
 
-To facilitate rapid testing of newly compiled releases starting from the first-time Setup Wizard:
+To facilitate rapid, secure testing of newly compiled releases starting from a clean database state:
+* **Two-Stage Onboarding**: The Setup Wizard enforces a strict sequential 2-stage process:
+  1. **Step 1 (Admin Setup)**: Register the master administrative username and security key (supporting Password or PIN modes).
+  2. **Step 2 (Populate Catalog)**: Stage and save initial product inventory items into SQLite.
 * **Reset Feature**: The application features a built-in **Reset Application** function.
 * **Accessing the Reset Action**:
-  * **Desktop viewports**: Click the **Reset Application** red-outlined button in the bottom section of the left sidebar menu.
-  * **Mobile viewports**: Click the trash/delete **Reset Application** icon button in the top-right corner of the mobile App Bar.
-* **Database Behavior**: This triggers an atomic SQLite transaction that deletes all registered transaction orders, empties the product inventory database, clears the registered master account credentials, and injects the default temporary administrative key (PIN: `1234`).
-* **Instant Redirection**: On success, the UI instantly redirects back to **Step 1 (Administrative Master Registration Setup)**, allowing you to run testing routines from a pristine database environment.
+  * **Desktop viewports**: Click the red-outlined **Reset Application** button at the bottom of the left sidebar.
+  * **Mobile viewports**: Click the trash-can **Reset Application** icon in the top-right corner of the mobile App Bar.
+* **🔒 Security Verification**: To prevent accidental data loss or unauthorized database wipes, clicking reset displays a stateful authorization prompt. The merchant **must enter their active administrative PIN or Password** to authorize the reset.
+* **Database Behavior**: On successful authorization, the application executes an atomic transaction that safely purges all orders, inventory tables, and admin credentials from SQLite.
+* **Instant Redirection**: Once wiped, the application instantly redirects back to **Step 1 (Administrative Master Setup)**, allowing you to run onboarding and catalog staging test routines starting from a pristine local environment!
