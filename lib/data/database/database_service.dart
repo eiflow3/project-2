@@ -38,8 +38,9 @@ class DatabaseService {
     // Opens or creates the SQLite DB file, setting our version scheme
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       onConfigure: _onConfigure,
     );
   }
@@ -48,6 +49,31 @@ class DatabaseService {
   Future<void> _onConfigure(Database db) async {
     // Crucial: Enforces SQLite foreign key constraints (defaults to OFF in SQLite)
     await db.execute('PRAGMA foreign_keys = ON;');
+  }
+
+  /// Manages schema upgrades across database version transitions.
+  /// This ensures existing web/desktop users get new tables created without losing their historical data.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Upgrading to version 2: Create merchant branding config table
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS merchant_config (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          store_name TEXT NOT NULL,
+          store_tagline TEXT NOT NULL,
+          store_icon TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+      ''');
+
+      // Pre-populate with default fallback branding
+      await db.insert('merchant_config', {
+        'store_name': 'GilNor Gas Store',
+        'store_tagline': 'OFFLINE LEDGER & POS SYSTEM',
+        'store_icon': 'GAS',
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    }
   }
 
   /// Executes SQL commands to build all required data tables from scratch.
