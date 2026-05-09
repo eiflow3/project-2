@@ -183,7 +183,7 @@ class NavigationSidebar extends StatelessWidget {
                   label: const Text('Reset Application', style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error.withOpacity(0.5), width: 1.2),
+                    side: BorderSide(color: AppColors.error.withOpacity(0.5), width: 1.2),
                     minimumSize: const Size.fromHeight(40),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
