@@ -1,0 +1,109 @@
+name: Cloud Build Release Apps
+
+# Trigger this workflow on every push to the main branch
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # ==========================================
+  # JOB 1: Build Standalone macOS App Bundle
+  # ==========================================
+  build-macos:
+    runs-on: macos-latest # Tells GitHub to spin up a virtual Mac with full Xcode!
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Fetch Dependencies
+        run: flutter pub get
+
+      - name: Setup Web/FFI Binaries
+        run: dart run sqflite_common_ffi_web:setup
+
+      - name: Build macOS Release
+        run: flutter build macos --release
+
+      - name: Compress macOS Application Folder
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../../OrderFlow_Mac.zip order_management_system.app
+
+      - name: Upload Mac Executable Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Mac_App_USB
+          path: OrderFlow_Mac.zip
+
+  # ==========================================
+  # JOB 2: Build Standalone Windows Executable
+  # ==========================================
+  build-windows:
+    runs-on: windows-latest # Tells GitHub to spin up a virtual Windows PC with MSVC compilers!
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Enable Windows Desktop Build Support
+        run: flutter config --enable-windows-desktop
+
+      - name: Fetch Dependencies
+        run: flutter pub get
+
+      - name: Setup Web/FFI Binaries
+        run: dart run sqflite_common_ffi_web:setup
+
+      - name: Build Windows Release
+        run: flutter build windows --release
+
+      - name: Package Windows files into ZIP
+        run: |
+          Compress-Archive -Path build/windows/runner/Release/* -DestinationPath ./OrderFlow_Windows.zip
+
+      - name: Upload Windows Executable Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Windows_App_USB
+          path: OrderFlow_Windows.zip
+
+  # ==========================================
+  # JOB 3: Build Standalone Android APK
+  # ==========================================
+  build-android:
+    runs-on: ubuntu-latest # Tells GitHub to spin up a Linux environment with Android SDK!
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Java Development Kit (JDK)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Fetch Dependencies
+        run: flutter pub get
+
+      - name: Build Android Release APK
+        run: flutter build apk --release
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Android_App_USB
+          path: build/app/outputs/flutter-apk/app-release.apk
