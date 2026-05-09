@@ -33,6 +33,9 @@ class AuthProvider with ChangeNotifier {
     _status = AuthStatus.loading;
     notifyListeners();
 
+    // Force a premium 3-second display constraint so the GilNor Gas Store intro is visible
+    await Future.delayed(const Duration(seconds: 3));
+
     try {
       bool hasAdmin = await _userRepo.hasRegisteredAdmin();
       if (hasAdmin) {
@@ -117,6 +120,9 @@ class AuthProvider with ChangeNotifier {
   Future<void> resetApplication() async {
     _status = AuthStatus.loading;
     notifyListeners();
+
+    // Force a premium 3-second display constraint so the GilNor Gas Store intro is visible
+    await Future.delayed(const Duration(seconds: 3));
 
     try {
       final dbService = DatabaseService();

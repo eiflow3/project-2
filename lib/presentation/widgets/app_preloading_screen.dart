@@ -29,8 +29,8 @@ class _AppPreloadingScreenState extends State<AppPreloadingScreen> {
   @override
   void initState() {
     super.initState();
-    // Progress through database loading milestones every 400ms to keep experience responsive and snappy
-    _timer = Timer.periodic(const Duration(milliseconds: 400), (timer) {
+    // Progress through database loading milestones every 600ms to sync with our 3-second startup sequence
+    _timer = Timer.periodic(const Duration(milliseconds: 600), (timer) {
       if (_currentStep < _steps.length - 1) {
         setState(() {
           _currentStep++;
