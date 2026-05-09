@@ -75,6 +75,11 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
   Widget build(BuildContext context) {
     final productProvider = Provider.of<ProductProvider>(context);
 
+    // Detect if device viewport matches mobile dimensions (< 800 width)
+    final double width = MediaQuery.of(context).size.width;
+    final bool isMobile = width < 800;
+    final double paddingVal = isMobile ? 12.0 : 24.0;
+
     // Filter catalogue list based on search keywords
     final String query = _searchController.text.toLowerCase();
     final List<ProductModel> filteredProducts = productProvider.products.where((p) {
@@ -85,34 +90,57 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(paddingVal),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header configuration
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Inventory Catalogue', style: AppStyles.heading1),
-                    SizedBox(height: 4),
-                    Text('Manage your core product listings, update costs, pricing and inspect current stocks.', style: AppStyles.bodySecondary),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _showProductDialog(),
-                  icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                  label: const Text('Add New Product', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryLight,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusSmall)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            // Header configuration (responsive layout)
+            isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Inventory Catalogue', style: AppStyles.heading1),
+                      const SizedBox(height: 4),
+                      const Text('Manage stock levels, pricing models and custom product configurations.', style: AppStyles.bodySecondary),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => _showProductDialog(),
+                        icon: const Icon(Icons.add, color: Colors.white, size: 18),
+                        label: const Text('Add New Product', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryLight,
+                          minimumSize: const Size.fromHeight(48), // Full-width button on mobile for better touch targets
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusSmall)),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Inventory Catalogue', style: AppStyles.heading1),
+                            SizedBox(height: 4),
+                            Text('Manage your core product listings, update costs, pricing and inspect current stocks.', style: AppStyles.bodySecondary),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => _showProductDialog(),
+                        icon: const Icon(Icons.add, color: Colors.white, size: 18),
+                        label: const Text('Add New Product', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryLight,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppStyles.radiusSmall)),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
             const SizedBox(height: 24),
 
             // Search filtering inputs
@@ -149,7 +177,7 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Products list table
+            // Products list table / cards output
             Expanded(
               child: productProvider.isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primaryLight))
@@ -164,119 +192,281 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                             ],
                           ),
                         )
-                      : Container(
-                          decoration: AppStyles.glassCardDecoration(),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
-                            child: SingleChildScrollView(
-                              child: Table(
-                                columnWidths: const {
-                                  0: FlexColumnWidth(2.5), // Name + custom cols
-                                  1: FlexColumnWidth(1.2), // Cost (Capital)
-                                  2: FlexColumnWidth(1.2), // Price (Retail)
-                                  3: FlexColumnWidth(1.0), // Margin profit
-                                  4: FlexColumnWidth(1.0), // Stock Qty
-                                  5: FlexColumnWidth(1.2), // Actions
-                                },
-                                children: [
-                                  TableRow(
-                                    decoration: const BoxDecoration(color: AppColors.surfaceLight),
+                      : isMobile
+                          // Adaptive cards layout for mobile touch interfaces
+                          ? ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: filteredProducts.length,
+                              itemBuilder: (context, index) {
+                                final product = filteredProducts[index];
+                                return _buildMobileProductCard(product);
+                              },
+                            )
+                          // Traditional data table grid layout for widescreen desktop setups
+                          : Container(
+                              decoration: AppStyles.glassCardDecoration(),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+                                child: SingleChildScrollView(
+                                  child: Table(
+                                    columnWidths: const {
+                                      0: FlexColumnWidth(2.5), // Name + custom cols
+                                      1: FlexColumnWidth(1.2), // Cost (Capital)
+                                      2: FlexColumnWidth(1.2), // Price (Retail)
+                                      3: FlexColumnWidth(1.0), // Margin profit
+                                      4: FlexColumnWidth(1.0), // Stock Qty
+                                      5: FlexColumnWidth(1.2), // Actions
+                                    },
                                     children: [
-                                      _buildTableHeader('Product Details'),
-                                      _buildTableHeader('Cost (Capital)'),
-                                      _buildTableHeader('Selling Price'),
-                                      _buildTableHeader('Profit Margin'),
-                                      _buildTableHeader('Stock Qty'),
-                                      _buildTableHeader('Actions'),
+                                      TableRow(
+                                        decoration: const BoxDecoration(color: AppColors.surfaceLight),
+                                        children: [
+                                          _buildTableHeader('Product Details'),
+                                          _buildTableHeader('Cost (Capital)'),
+                                          _buildTableHeader('Selling Price'),
+                                          _buildTableHeader('Profit Margin'),
+                                          _buildTableHeader('Stock Qty'),
+                                          _buildTableHeader('Actions'),
+                                        ],
+                                      ),
+                                      ...filteredProducts.map((product) {
+                                        final double profit = product.sellingPrice - product.unitCost;
+                                        final bool isLowStock = product.quantity < 5;
+                                        final bool isOutOfStock = product.quantity == 0;
+
+                                        return TableRow(
+                                          decoration: const BoxDecoration(
+                                            border: Border(bottom: BorderSide(color: AppColors.surfaceLight, width: 1)),
+                                          ),
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(product.name, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
+                                                  if (product.extraColumns.isNotEmpty) ...[
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      product.extraColumns.entries.map((e) => '${e.key}: ${e.value}').join(' | '),
+                                                      style: const TextStyle(color: AppColors.primaryLight, fontSize: 11),
+                                                    )
+                                                  ]
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Text(Helpers.formatCurrency(product.unitCost), style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Text(Helpers.formatCurrency(product.sellingPrice), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Text('+${Helpers.formatCurrency(profit)}', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w600, fontSize: 13)),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Row(
+                                                children: [
+                                                  Text(product.quantity.toString(), style: TextStyle(color: isOutOfStock ? AppColors.error : (isLowStock ? AppColors.warning : AppColors.textPrimary), fontWeight: FontWeight.bold, fontSize: 13)),
+                                                  if (isOutOfStock) ...[
+                                                    const SizedBox(width: 6),
+                                                    Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: AppColors.error.withOpacity(0.12), borderRadius: BorderRadius.circular(4)), child: const Text('OUT', style: TextStyle(color: AppColors.error, fontSize: 8, fontWeight: FontWeight.bold))),
+                                                  ] else if (isLowStock) ...[
+                                                    const SizedBox(width: 6),
+                                                    Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.12), borderRadius: BorderRadius.circular(4)), child: const Text('LOW', style: TextStyle(color: AppColors.warning, fontSize: 8, fontWeight: FontWeight.bold))),
+                                                  ]
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                                              child: Row(
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(Icons.edit_note, color: AppColors.primaryLight, size: 20),
+                                                    onPressed: () => _showProductDialog(product: product),
+                                                    tooltip: 'Edit Parameters',
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                                                    onPressed: () => _deleteProduct(product),
+                                                    tooltip: 'Remove Listing',
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList()
                                     ],
                                   ),
-                                  ...filteredProducts.map((product) {
-                                    final double profit = product.sellingPrice - product.unitCost;
-                                    final bool isLowStock = product.quantity < 5;
-                                    final bool isOutOfStock = product.quantity == 0;
-
-                                    return TableRow(
-                                      decoration: const BoxDecoration(
-                                        border: Border(bottom: BorderSide(color: AppColors.surfaceLight, width: 1)),
-                                      ),
-                                      children: [
-                                        // Product details & Custom Columns details
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(product.name, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
-                                              if (product.extraColumns.isNotEmpty) ...[
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  product.extraColumns.entries.map((e) => '${e.key}: ${e.value}').join(' | '),
-                                                  style: const TextStyle(color: AppColors.primaryLight, fontSize: 11),
-                                                )
-                                              ]
-                                            ],
-                                          ),
-                                        ),
-                                        // Cost
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Text(Helpers.formatCurrency(product.unitCost), style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                                        ),
-                                        // Price
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Text(Helpers.formatCurrency(product.sellingPrice), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
-                                        ),
-                                        // Profit margin markup
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Text('+${Helpers.formatCurrency(profit)}', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w600, fontSize: 13)),
-                                        ),
-                                        // Stock Quantity alert
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Row(
-                                            children: [
-                                              Text(product.quantity.toString(), style: TextStyle(color: isOutOfStock ? AppColors.error : (isLowStock ? AppColors.warning : AppColors.textPrimary), fontWeight: FontWeight.bold, fontSize: 13)),
-                                              if (isOutOfStock) ...[
-                                                const SizedBox(width: 6),
-                                                Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: AppColors.error.withOpacity(0.12), borderRadius: BorderRadius.circular(4)), child: const Text('OUT', style: TextStyle(color: AppColors.error, fontSize: 8, fontWeight: FontWeight.bold))),
-                                              ] else if (isLowStock) ...[
-                                                const SizedBox(width: 6),
-                                                Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.12), borderRadius: BorderRadius.circular(4)), child: const Text('LOW', style: TextStyle(color: AppColors.warning, fontSize: 8, fontWeight: FontWeight.bold))),
-                                              ]
-                                            ],
-                                          ),
-                                        ),
-                                        // Actions Trigger Buttons
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-                                          child: Row(
-                                            children: [
-                                              IconButton(
-                                                icon: const Icon(Icons.edit_note, color: AppColors.primaryLight, size: 20),
-                                                onPressed: () => _showProductDialog(product: product),
-                                                tooltip: 'Edit Parameters',
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
-                                                onPressed: () => _deleteProduct(product),
-                                                tooltip: 'Remove Listing',
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  }).toList()
-                                ],
+                                ),
                               ),
                             ),
-                          ),
-                        ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Builds a detailed and visually stunning local inventory card optimized for touch targets on mobile.
+  Widget _buildMobileProductCard(ProductModel product) {
+    final double profit = product.sellingPrice - product.unitCost;
+    final bool isLowStock = product.quantity < 5;
+    final bool isOutOfStock = product.quantity == 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+        border: Border.all(color: AppColors.surfaceLight.withOpacity(0.6), width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Title and custom key attributes + stock level indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (product.extraColumns.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        product.extraColumns.entries.map((e) => '${e.key}: ${e.value}').join(' | '),
+                        style: const TextStyle(color: AppColors.primaryLight, fontSize: 11),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isOutOfStock
+                      ? AppColors.error.withOpacity(0.12)
+                      : (isLowStock ? AppColors.warning.withOpacity(0.12) : AppColors.success.withOpacity(0.12)),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: isOutOfStock
+                        ? AppColors.error.withOpacity(0.3)
+                        : (isLowStock ? AppColors.warning.withOpacity(0.3) : AppColors.success.withOpacity(0.3)),
+                  ),
+                ),
+                child: Text(
+                  'STOCK: ${product.quantity}',
+                  style: TextStyle(
+                    color: isOutOfStock ? AppColors.error : (isLowStock ? AppColors.warning : AppColors.success),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: AppColors.surfaceLight, height: 1.0),
+          const SizedBox(height: 12),
+
+          // 2. Cost structure, Selling price, and Profit margins info grid
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('COST', style: TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    const SizedBox(height: 2),
+                    Text(
+                      Helpers.formatCurrency(product.unitCost),
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('PRICE', style: TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    const SizedBox(height: 2),
+                    Text(
+                      Helpers.formatCurrency(product.sellingPrice),
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('PROFIT', style: TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    const SizedBox(height: 2),
+                    Text(
+                      '+${Helpers.formatCurrency(profit)}',
+                      style: const TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: AppColors.surfaceLight, height: 1.0),
+          const SizedBox(height: 10),
+
+          // 3. Command triggers (Edit, Delete) mapped specifically for clean spacing
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () => _showProductDialog(product: product),
+                icon: const Icon(Icons.edit_note, size: 16, color: AppColors.primaryLight),
+                label: const Text('Edit Details', style: TextStyle(color: AppColors.primaryLight, fontSize: 11)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(color: AppColors.primaryLight, width: 1.0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => _deleteProduct(product),
+                icon: const Icon(Icons.delete_outline, size: 14, color: AppColors.error),
+                label: const Text('Delete', style: TextStyle(color: AppColors.error, fontSize: 11)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(color: AppColors.error, width: 1.0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

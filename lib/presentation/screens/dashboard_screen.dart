@@ -161,6 +161,10 @@ class DashboardScreen extends StatelessWidget {
     final merchantProvider = Provider.of<MerchantProvider>(context);
     final String storeName = merchantProvider.activeConfig?.storeName ?? 'Workspace';
 
+    // Detect if device viewport matches mobile dimensions (< 800 width)
+    final double width = MediaQuery.of(context).size.width;
+    final bool isMobile = width < 800;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -171,53 +175,48 @@ class DashboardScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Greeting content
+          // Greeting content with responsive layout logic
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Welcome to $storeName',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    // SQLite DB Health Badge with pulsating green dot
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
-                        border: Border.all(color: AppColors.success.withOpacity(0.2), width: 0.8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
+                isMobile
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _PulsingStatusLight(),
-                          SizedBox(width: 6),
                           Text(
-                            'SQLITE ENGINE LOCAL',
-                            style: TextStyle(
-                              color: AppColors.success,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.0,
+                            'Welcome to $storeName',
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          _buildDbHealthBadge(),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Welcome to $storeName',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          _buildDbHealthBadge(),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 const Text(
                   'Your point of sale operations and database transaction logs are fully synced.',
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
@@ -225,6 +224,7 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 12),
           
           // Refresh database trigger button
           IconButton(
@@ -240,6 +240,34 @@ class DashboardScreen extends StatelessWidget {
                 side: BorderSide(color: AppColors.surfaceLight.withOpacity(0.5), width: 1.0),
               ),
               padding: const EdgeInsets.all(12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the local SQLite database health and connection status badge.
+  Widget _buildDbHealthBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.success.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
+        border: Border.all(color: AppColors.success.withOpacity(0.2), width: 0.8),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _PulsingStatusLight(),
+          SizedBox(width: 6),
+          Text(
+            'SQLITE ENGINE LOCAL',
+            style: TextStyle(
+              color: AppColors.success,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
             ),
           ),
         ],

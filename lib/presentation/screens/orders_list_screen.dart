@@ -58,6 +58,11 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
   Widget build(BuildContext context) {
     final orderProvider = Provider.of<OrderProvider>(context);
 
+    // Detect if device viewport matches mobile dimensions (< 800 width)
+    final double width = MediaQuery.of(context).size.width;
+    final bool isMobile = width < 800;
+    final double paddingVal = isMobile ? 12.0 : 24.0;
+
     // Filter list based on search key and chip selectors
     final String query = _searchController.text.toLowerCase();
     final List<OrderModel> filteredOrders = orderProvider.orders.where((order) {
@@ -74,7 +79,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(paddingVal),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -117,7 +122,6 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // Export summary placeholder if desired, or clear search button
                       IconButton(
                         onPressed: () {
                           _searchController.clear();
@@ -130,26 +134,30 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Category Filter Choice Chips
-                  Row(
-                    children: [
-                      const Text('Filter Status:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 12),
-                      _buildFilterChip('ALL', 'All Logged'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('PENDING', 'Pending Payment', badgeColor: AppColors.warning),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('COMPLETED', 'Completed Sales', badgeColor: AppColors.success),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('CANCELLED', 'Cancelled Voided', badgeColor: AppColors.error),
-                    ],
+                  // Category Filter Choice Chips wrapped in horizontal scrollbar to prevent mobile overflow
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [
+                        const Text('Filter Status:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 12),
+                        _buildFilterChip('ALL', 'All Logged'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('PENDING', 'Pending Payment', badgeColor: AppColors.warning),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('COMPLETED', 'Completed Sales', badgeColor: AppColors.success),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('CANCELLED', 'Cancelled Voided', badgeColor: AppColors.error),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
-            // 2. Main Ledger Database Table Output
+            // 2. Main Ledger Database Output
             Expanded(
               child: orderProvider.isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primaryLight))
@@ -166,111 +174,285 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                             ],
                           ),
                         )
-                      : Container(
-                          decoration: AppStyles.glassCardDecoration(),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.vertical,
-                              child: Table(
-                                columnWidths: const {
-                                  0: FlexColumnWidth(1.8), // Customer
-                                  1: FlexColumnWidth(2.2), // Address/Contact
-                                  2: FlexColumnWidth(1.8), // Product Alias
-                                  3: FlexColumnWidth(1.0), // Qty
-                                  4: FlexColumnWidth(1.5), // Pricing
-                                  5: FlexColumnWidth(1.5), // Fulfillment/Rider
-                                  6: FlexColumnWidth(1.4), // Status Badge
-                                  7: FlexColumnWidth(1.4), // Actions Selector
-                                },
-                                children: [
-                                  // Table Header Row
-                                  TableRow(
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.surfaceLight,
-                                    ),
+                      : isMobile
+                          // On mobile, render a stunning modern card list layout
+                          ? ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: filteredOrders.length,
+                              itemBuilder: (context, index) {
+                                final order = filteredOrders[index];
+                                return _buildMobileOrderCard(order);
+                              },
+                            )
+                          // On desktop, render a complete ledger details database grid
+                          : Container(
+                              decoration: AppStyles.glassCardDecoration(),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.vertical,
+                                  child: Table(
+                                    columnWidths: const {
+                                      0: FlexColumnWidth(1.8), // Customer
+                                      1: FlexColumnWidth(2.2), // Address/Contact
+                                      2: FlexColumnWidth(1.8), // Product Alias
+                                      3: FlexColumnWidth(1.0), // Qty
+                                      4: FlexColumnWidth(1.5), // Pricing
+                                      5: FlexColumnWidth(1.5), // Fulfillment/Rider
+                                      6: FlexColumnWidth(1.4), // Status Badge
+                                      7: FlexColumnWidth(1.4), // Actions Selector
+                                    },
                                     children: [
-                                      _buildTableHeader('Customer Name'),
-                                      _buildTableHeader('Address'),
-                                      _buildTableHeader('Product'),
-                                      _buildTableHeader('Qty'),
-                                      _buildTableHeader('Computed Price'),
-                                      _buildTableHeader('Fulfillment'),
-                                      _buildTableHeader('Status'),
-                                      _buildTableHeader('Actions'),
+                                      TableRow(
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.surfaceLight,
+                                        ),
+                                        children: [
+                                          _buildTableHeader('Customer Name'),
+                                          _buildTableHeader('Address'),
+                                          _buildTableHeader('Product'),
+                                          _buildTableHeader('Qty'),
+                                          _buildTableHeader('Computed Price'),
+                                          _buildTableHeader('Fulfillment'),
+                                          _buildTableHeader('Status'),
+                                          _buildTableHeader('Actions'),
+                                        ],
+                                      ),
+                                      ...filteredOrders.map((order) {
+                                        return TableRow(
+                                          decoration: const BoxDecoration(
+                                            border: Border(bottom: BorderSide(color: AppColors.surfaceLight, width: 1)),
+                                          ),
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(order.customerName, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
+                                                  const SizedBox(height: 4),
+                                                  Text(Helpers.formatTimestamp(order.createdAt), style: const TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Text(order.customerAddress, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Text(order.productName ?? '—', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Text(order.quantity.toString(), style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Text(Helpers.formatCurrency(order.computedPrice), style: const TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13)),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(order.fulfillmentType, style: TextStyle(color: order.fulfillmentType == 'DELIVERY' ? AppColors.accent : AppColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 11)),
+                                                  if (order.deliveryRider != null && order.deliveryRider!.isNotEmpty) ...[
+                                                    const SizedBox(height: 4),
+                                                    Text('Rider: ${order.deliveryRider}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                                                  ]
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 14.0),
+                                              child: _buildStatusBadge(order.status),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                                              child: _buildActionsMenu(order),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList()
                                     ],
                                   ),
-                                  // Table Rows mapping elements
-                                  ...filteredOrders.map((order) {
-                                    return TableRow(
-                                      decoration: const BoxDecoration(
-                                        border: Border(bottom: BorderSide(color: AppColors.surfaceLight, width: 1)),
-                                      ),
-                                      children: [
-                                        // Customer Name & Timestamp
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(order.customerName, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
-                                              const SizedBox(height: 4),
-                                              Text(Helpers.formatTimestamp(order.createdAt), style: const TextStyle(color: AppColors.textMuted, fontSize: 10)),
-                                            ],
-                                          ),
-                                        ),
-                                        // Customer Address
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Text(order.customerAddress, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                        ),
-                                        // Product Name
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Text(order.productName ?? '—', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12)),
-                                        ),
-                                        // Quantity
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Text(order.quantity.toString(), style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
-                                        ),
-                                        // Price
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Text(Helpers.formatCurrency(order.computedPrice), style: const TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13)),
-                                        ),
-                                        // Fulfillment Channel
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(order.fulfillmentType, style: TextStyle(color: order.fulfillmentType == 'DELIVERY' ? AppColors.accent : AppColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 11)),
-                                              if (order.deliveryRider != null && order.deliveryRider!.isNotEmpty) ...[
-                                                const SizedBox(height: 4),
-                                                Text('Rider: ${order.deliveryRider}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
-                                              ]
-                                            ],
-                                          ),
-                                        ),
-                                        // Status badge
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 14.0),
-                                          child: _buildStatusBadge(order.status),
-                                        ),
-                                        // Quick actions popup menu
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-                                          child: _buildActionsMenu(order),
-                                        ),
-                                      ],
-                                    );
-                                  }).toList()
-                                ],
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a detailed and visually stunning local ledger card optimized for touch targets on mobile.
+  Widget _buildMobileOrderCard(OrderModel order) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+        border: Border.all(color: AppColors.surfaceLight.withOpacity(0.6), width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Customer profile and order status
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  order.customerName,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildStatusBadge(order.status),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            Helpers.formatTimestamp(order.createdAt),
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: AppColors.surfaceLight, height: 1.0),
+          const SizedBox(height: 12),
+
+          // 2. Product items and computed total price
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  '${order.productName ?? "—"}  x${order.quantity}',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                Helpers.formatCurrency(order.computedPrice),
+                style: const TextStyle(
+                  color: AppColors.primaryLight,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // 3. Logistics fulfillment channel with icons
+          Row(
+            children: [
+              Icon(
+                order.fulfillmentType == 'DELIVERY' ? Icons.delivery_dining : Icons.storefront,
+                color: order.fulfillmentType == 'DELIVERY' ? AppColors.accent : AppColors.textSecondary,
+                size: 14,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                order.fulfillmentType,
+                style: TextStyle(
+                  color: order.fulfillmentType == 'DELIVERY' ? AppColors.accent : AppColors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+              if (order.deliveryRider != null && order.deliveryRider!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '• Rider: ${order.deliveryRider}',
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // 4. Physical contact address
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_outlined, color: AppColors.textMuted, size: 14),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  order.customerAddress,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          const Divider(color: AppColors.surfaceLight, height: 1.0),
+          const SizedBox(height: 10),
+
+          // 5. Tactile status switch controls tailored for direct mobile taps
+          Row(
+            children: [
+              const Text(
+                'UPDATE STATE:',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+              ),
+              const Spacer(),
+              _buildStatusActionButton(order, 'PENDING', Icons.pending_actions, AppColors.warning),
+              const SizedBox(width: 8),
+              _buildStatusActionButton(order, 'COMPLETED', Icons.check_circle_outline, AppColors.success),
+              const SizedBox(width: 8),
+              _buildStatusActionButton(order, 'CANCELLED', Icons.cancel_outlined, AppColors.error),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Renders a responsive status button that updates states with a single tap.
+  Widget _buildStatusActionButton(OrderModel order, String status, IconData icon, Color color) {
+    final bool isActive = order.status == status;
+    return InkWell(
+      onTap: isActive ? null : () => _updateStatus(order, status),
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? color.withOpacity(0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: isActive ? color.withOpacity(0.5) : AppColors.surfaceLight.withOpacity(0.5),
+            width: 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isActive ? color : AppColors.textSecondary,
+              size: 14,
             ),
           ],
         ),

@@ -8,7 +8,7 @@ This document outlines the architecture of the **Offline Flutter Order Managemen
 2. **Layered Separation of Concerns**:
    * **Data Layer**: Handles SQLite database operations, queries, migrations, and low-level data mapping.
    * **State/Logic Layer**: Orchestrates state using clean, simple providers (`ChangeNotifier` and `ValueNotifier`) for reactive UI updates without complex boilerplate.
-   * **Presentation Layer**: Built with premium, rich modern aesthetics (dark/light theme config, high-contrast visual tokens, responsive widgets) tailored for desktop resolutions.
+   * **Presentation Layer**: Built with premium, rich modern aesthetics (dark/light theme config, high-contrast visual tokens, responsive widgets) tailored for both high-end desktop resolutions and compact mobile/tablet viewports.
 3. **Multi-File & Modular Development**: To maintain clean code and readability, files are strictly split into distinct folders and purposes.
 
 ---

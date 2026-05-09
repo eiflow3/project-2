@@ -140,11 +140,16 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
   Widget build(BuildContext context) {
     final productProvider = Provider.of<ProductProvider>(context);
 
+    // Detect if device viewport matches mobile dimensions (< 800 width)
+    final double width = MediaQuery.of(context).size.width;
+    final bool isMobile = width < 800;
+    final double paddingVal = isMobile ? 12.0 : 24.0;
+
     return Scaffold(
       backgroundColor: Colors.transparent, // Inherits smooth background gradient
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(paddingVal),
         child: Form(
           key: _formKey,
           child: Column(
@@ -445,29 +450,54 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
               ),
               const SizedBox(height: 20),
               
-              // Grid Row for distribution toggles (Store Walk-In vs Delivery)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTactileFulfillmentButton(
-                      title: 'Store Walk-In',
-                      subtitle: 'Direct counter payment',
-                      icon: Icons.storefront,
-                      isSelected: _fulfillmentType == 'WALKIN',
-                      onTap: () => setState(() => _fulfillmentType = 'WALKIN'),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: _buildTactileFulfillmentButton(
-                      title: 'Rider Delivery',
-                      subtitle: 'Direct home courier',
-                      icon: Icons.delivery_dining_rounded,
-                      isSelected: _fulfillmentType == 'DELIVERY',
-                      onTap: () => setState(() => _fulfillmentType = 'DELIVERY'),
-                    ),
-                  ),
-                ],
+              // Grid Row for distribution toggles. Adapts vertically on very narrow screens (< 450px container width)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final bool useVertical = constraints.maxWidth < 450;
+                  return useVertical
+                      ? Column(
+                          children: [
+                            _buildTactileFulfillmentButton(
+                              title: 'Store Walk-In',
+                              subtitle: 'Direct counter payment',
+                              icon: Icons.storefront,
+                              isSelected: _fulfillmentType == 'WALKIN',
+                              onTap: () => setState(() => _fulfillmentType = 'WALKIN'),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildTactileFulfillmentButton(
+                              title: 'Rider Delivery',
+                              subtitle: 'Direct home courier',
+                              icon: Icons.delivery_dining_rounded,
+                              isSelected: _fulfillmentType == 'DELIVERY',
+                              onTap: () => setState(() => _fulfillmentType = 'DELIVERY'),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: _buildTactileFulfillmentButton(
+                                title: 'Store Walk-In',
+                                subtitle: 'Direct counter payment',
+                                icon: Icons.storefront,
+                                isSelected: _fulfillmentType == 'WALKIN',
+                                onTap: () => setState(() => _fulfillmentType = 'WALKIN'),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _buildTactileFulfillmentButton(
+                                title: 'Rider Delivery',
+                                subtitle: 'Direct home courier',
+                                icon: Icons.delivery_dining_rounded,
+                                isSelected: _fulfillmentType == 'DELIVERY',
+                                onTap: () => setState(() => _fulfillmentType = 'DELIVERY'),
+                              ),
+                            ),
+                          ],
+                        );
+                },
               ),
               
               // Collapsible Courier field details
@@ -488,15 +518,16 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
               const Divider(color: AppColors.surfaceLight, height: 1.5),
               const SizedBox(height: 20),
 
-              // Tactile initial payment status selector
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+              // Tactile initial payment status selector. Wrapped inside a wrap widget to prevent horizontal clipping
+              Wrap(
+                spacing: 12, // Horizontal spacing between status elements
+                runSpacing: 10, // Vertical spacing if they wrap to a second line on narrow displays
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   const Text(
                     'Initial Checkout Status:',
                     style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 16),
                   _buildTactileStatusChip(
                     title: 'Pending Log',
                     icon: Icons.schedule_rounded,
@@ -504,7 +535,6 @@ class _OrderEntryScreenState extends State<OrderEntryScreen> {
                     isSelected: _orderStatus == 'PENDING',
                     onTap: () => setState(() => _orderStatus = 'PENDING'),
                   ),
-                  const SizedBox(width: 10),
                   _buildTactileStatusChip(
                     title: 'Completed Sales',
                     icon: Icons.check_circle_outline_rounded,
