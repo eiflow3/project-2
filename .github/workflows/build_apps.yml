@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-latest # Tells GitHub to spin up a virtual Mac with full Xcode!
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Flutter SDK
         uses: subosito/flutter-action@v2
@@ -35,7 +35,7 @@ jobs:
           zip -r ../../../../../OrderFlow_Mac.zip order_management_system.app
 
       - name: Upload Mac Executable Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Mac_App_USB
           path: OrderFlow_Mac.zip
@@ -47,7 +47,7 @@ jobs:
     runs-on: windows-latest # Tells GitHub to spin up a virtual Windows PC with MSVC compilers!
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Flutter SDK
         uses: subosito/flutter-action@v2
@@ -71,7 +71,7 @@ jobs:
           Compress-Archive -Path build/windows/runner/Release/* -DestinationPath ./OrderFlow_Windows.zip
 
       - name: Upload Windows Executable Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Windows_App_USB
           path: OrderFlow_Windows.zip
@@ -83,10 +83,10 @@ jobs:
     runs-on: ubuntu-latest # Tells GitHub to spin up a Linux environment with Android SDK!
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Java Development Kit (JDK)
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -103,7 +103,7 @@ jobs:
         run: flutter build apk --release
 
       - name: Upload Android APK Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Android_App_USB
           path: build/app/outputs/flutter-apk/app-release.apk
