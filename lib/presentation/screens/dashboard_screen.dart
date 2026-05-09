@@ -170,7 +170,7 @@ class DashboardScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: gradient,
                   color: gradient == null ? (color ?? AppColors.primary).withOpacity(0.1) : null,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                 ),
                 child: Icon(icon, color: gradient == null ? (color ?? AppColors.primaryLight) : Colors.white, size: 18),
               ),
@@ -297,7 +297,7 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: lowStockCount > 0 ? AppColors.warning.withOpacity(0.1) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                 ),
                 child: Text(
                   '$lowStockCount products',
@@ -322,7 +322,7 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: outOfStockCount > 0 ? AppColors.error.withOpacity(0.1) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                 ),
                 child: Text(
                   '$outOfStockCount products',

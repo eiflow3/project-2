@@ -83,7 +83,7 @@ class _SetupAdminScreenState extends State<SetupAdminScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                         ),
                         child: const Text(
                           'Step 1 of 2',

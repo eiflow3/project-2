@@ -162,7 +162,7 @@ class _SetupProductsScreenState extends State<SetupProductsScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                         ),
                         child: const Text(
                           'Step 2 of 2',
@@ -368,7 +368,7 @@ class _SetupProductsScreenState extends State<SetupProductsScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                         ),
                         child: Text(
                           '${_stagedProducts.length} Items Staged',

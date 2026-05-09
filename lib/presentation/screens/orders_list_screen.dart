@@ -333,7 +333,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       alignment: Alignment.center,
