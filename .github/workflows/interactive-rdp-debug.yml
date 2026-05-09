@@ -61,7 +61,7 @@ jobs:
           Set-LocalUser -Name "runneradmin" -Password $Password
           
           # D. Download and extract the latest ngrok windows agent
-          Invoke-WebRequest -Uri "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip" -OutFile "ngrok.zip"
+          Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
           Expand-Archive -Path "ngrok.zip" -DestinationPath "."
           
           # E. Authenticate ngrok using your secret token from GitHub Secrets
