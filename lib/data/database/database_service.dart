@@ -69,9 +69,9 @@ class DatabaseService {
 
       // Pre-populate with default fallback branding
       await db.insert('merchant_config', {
-        'store_name': 'GilNor Gas Store',
+        'store_name': 'OrderFlow',
         'store_tagline': 'OFFLINE LEDGER & POS SYSTEM',
-        'store_icon': 'GAS',
+        'store_icon': 'STORE',
         'updated_at': DateTime.now().toIso8601String(),
       });
     }
@@ -141,11 +141,11 @@ class DatabaseService {
       'created_at': DateTime.now().toIso8601String(),
     });
 
-    // Pre-populate with default branding (e.g. GilNor Gas Store as default!)
+    // Pre-populate with default branding (e.g. OrderFlow as default!)
     await db.insert('merchant_config', {
-      'store_name': 'GilNor Gas Store',
+      'store_name': 'OrderFlow',
       'store_tagline': 'OFFLINE LEDGER & POS SYSTEM',
-      'store_icon': 'GAS',
+      'store_icon': 'STORE',
       'updated_at': DateTime.now().toIso8601String(),
     });
   }
@@ -174,9 +174,9 @@ class DatabaseService {
 
       // 6. Re-inject temporary default branding to enable custom client onboarding
       await txn.insert('merchant_config', {
-        'store_name': 'GilNor Gas Store',
+        'store_name': 'OrderFlow',
         'store_tagline': 'OFFLINE LEDGER & POS SYSTEM',
-        'store_icon': 'GAS',
+        'store_icon': 'STORE',
         'updated_at': DateTime.now().toIso8601String(),
       });
     });

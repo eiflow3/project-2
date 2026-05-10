@@ -13,11 +13,11 @@ class MerchantRepository {
     final List<Map<String, dynamic>> maps = await db.query('merchant_config', limit: 1);
 
     if (maps.isEmpty) {
-      // Injects default fallback configurations (GilNor Gas Store as global template)
+      // Injects default fallback configurations (OrderFlow as global template)
       final MerchantConfigModel fallback = MerchantConfigModel(
-        storeName: 'GilNor Gas Store',
+        storeName: 'OrderFlow',
         storeTagline: 'OFFLINE LEDGER & POS SYSTEM',
-        storeIcon: 'GAS',
+        storeIcon: 'STORE',
         updatedAt: DateTime.now().toIso8601String(),
       );
       await db.insert('merchant_config', fallback.toMap());

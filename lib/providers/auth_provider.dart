@@ -33,7 +33,7 @@ class AuthProvider with ChangeNotifier {
     _status = AuthStatus.loading;
     notifyListeners();
 
-    // Force a premium 3-second display constraint so the GilNor Gas Store intro is visible
+    // Force a premium 3-second display constraint so the OrderFlow intro is visible
     await Future.delayed(const Duration(seconds: 3));
 
     try {
@@ -121,7 +121,7 @@ class AuthProvider with ChangeNotifier {
     _status = AuthStatus.loading;
     notifyListeners();
 
-    // Force a premium 3-second display constraint so the GilNor Gas Store intro is visible
+    // Force a premium 3-second display constraint so the OrderFlow intro is visible
     await Future.delayed(const Duration(seconds: 3));
 
     try {

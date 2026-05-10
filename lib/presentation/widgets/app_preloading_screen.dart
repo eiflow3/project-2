@@ -6,7 +6,7 @@ import '../../core/theme/style.dart';
 import '../../providers/merchant_provider.dart';
 
 /// AppPreloadingScreen displays a premium, customized intro and database loading sequence
-/// during startup for GilNor Gas Store. It simulates active milestoning for local db connections.
+/// during startup for OrderFlow. It simulates active milestoning for local db connections.
 class AppPreloadingScreen extends StatefulWidget {
   const AppPreloadingScreen({super.key});
 
@@ -24,7 +24,7 @@ class _AppPreloadingScreenState extends State<AppPreloadingScreen> {
     super.initState();
     // Retrieve active white-labeled store name for startup checkpoint step
     final merchantProvider = Provider.of<MerchantProvider>(context, listen: false);
-    final String storeName = merchantProvider.activeConfig?.storeName ?? 'GilNor Gas Store';
+    final String storeName = merchantProvider.activeConfig?.storeName ?? 'OrderFlow';
 
     _steps = [
       'Connecting local database FFI bindings...',
@@ -55,7 +55,7 @@ class _AppPreloadingScreenState extends State<AppPreloadingScreen> {
   @override
   Widget build(BuildContext context) {
     final merchantProvider = Provider.of<MerchantProvider>(context);
-    final String storeName = merchantProvider.activeConfig?.storeName ?? 'GilNor Gas Store';
+    final String storeName = merchantProvider.activeConfig?.storeName ?? 'OrderFlow';
     final String storeTagline = merchantProvider.activeConfig?.storeTagline ?? 'OFFLINE LEDGER & POS SYSTEM';
     final IconData storeIcon = merchantProvider.activeConfig?.getMaterialIcon() ?? Icons.local_fire_department_rounded;
 
@@ -84,7 +84,7 @@ class _AppPreloadingScreenState extends State<AppPreloadingScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Glowing Gas Flame Emblem representing GilNor Gas Store
+                // Glowing Storefront Emblem representing OrderFlow
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(

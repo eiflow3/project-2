@@ -10,7 +10,7 @@ Because Flutter is a multi-platform framework, the database layer in `lib/main.d
 
 | Platform | Database Driver / Factory | Database File Path / Location |
 | :--- | :--- | :--- |
-| **Android** | **Native OS SQLite Channel (Default)** | `/data/data/com.example.offline_order_manager/databases/offline_order_manager.db` (Isolated Sandbox) |
+| **Android** | **Native OS SQLite Channel (Default)** | `/data/data/com.orderflow.offline/databases/offline_order_manager.db` (Isolated Sandbox) |
 | **macOS / Windows** | FFI bindings (`sqflite_common_ffi`) | User's local Application Support directory (native OS file system) |
 | **Web (Chrome)** | IndexedDB Web WASM (`sqflite_common_ffi_web`) | Browser-sandboxed WebAssembly virtual filesystem (IndexedDB) |
 
@@ -46,8 +46,8 @@ In `lib/data/database/database_service.dart`, we define the database path initia
       path = join(databasesPath, 'offline_order_manager.db');
     }
 ```
-* **`getDatabasesPath()`** is a native bridge function. On Android, it returns the standard system path allocated to our application sandbox: `/data/data/com.example.offline_order_manager/databases/`.
-* Android's security kernel strictly enforces that only our package ID (`com.example.offline_order_manager`) has permission to read or write to this directory. Other apps on the device cannot access your database file, keeping customer and transaction data fully secure.
+* **`getDatabasesPath()`** is a native bridge function. On Android, it returns the standard system path allocated to our application sandbox: `/data/data/com.orderflow.offline/databases/`.
+* Android's security kernel strictly enforces that only our package ID (`com.orderflow.offline`) has permission to read or write to this directory. Other apps on the device cannot access your database file, keeping customer and transaction data fully secure.
 
 ### 3. Native Constraint Enforcement
 Even though Android utilizes native bindings, low-level database configurations (such as foreign key constraints) are perfectly synchronized using our custom `onConfigure` callback:

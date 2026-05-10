@@ -27,9 +27,9 @@ class MerchantProvider with ChangeNotifier {
     } catch (_) {
       // Direct safe fallback if database is not fully set up yet
       _activeConfig = MerchantConfigModel(
-        storeName: 'GilNor Gas Store',
+        storeName: 'OrderFlow',
         storeTagline: 'OFFLINE LEDGER & POS SYSTEM',
-        storeIcon: 'GAS',
+        storeIcon: 'STORE',
         updatedAt: DateTime.now().toIso8601String(),
       );
     }

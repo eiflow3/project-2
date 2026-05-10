@@ -120,7 +120,7 @@ Whenever you commit and push your code to the `main` branch of your repository o
 ## Offline Database Backup & Maintenance
 
 * Since the database is offline, its SQLite database file resides inside your local macOS Application Support directory:
-  `~/Library/Application Support/com.example.offline_orders/offline_orders.db`
+  `~/Library/Application Support/com.orderflow.offline/offline_order_manager.db`
 * To safeguard your store data, simply copy this file to an external thumb-drive or cloud folder as a backup.
 
 ---
