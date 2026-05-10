@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/style.dart';
 import '../../../providers/merchant_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/custom_text_field.dart';
 import 'setup_admin_screen.dart';
@@ -24,7 +25,6 @@ class _SetupBrandingScreenState extends State<SetupBrandingScreen> {
 
   String _selectedIconCode = 'STORE'; // Default selected brand logo
   bool _isSaving = false;
-  bool _brandingSetupSuccess = false; // Local router hook for Step 1 completion
 
   @override
   void dispose() {
@@ -50,9 +50,10 @@ class _SetupBrandingScreenState extends State<SetupBrandingScreen> {
     setState(() => _isSaving = false);
 
     if (success) {
-      setState(() {
-        _brandingSetupSuccess = true; // Advance smoothly to Step 2 (Admin Setup)
-      });
+      if (mounted) {
+        // Update the global onboarding step context to transition smoothly to Step 2
+        Provider.of<AuthProvider>(context, listen: false).setOnboardingStep(2);
+      }
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -65,10 +66,6 @@ class _SetupBrandingScreenState extends State<SetupBrandingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // If Step 1 is complete, transition dynamically to SetupAdminScreen
-    if (_brandingSetupSuccess) {
-      return const SetupAdminScreen();
-    }
 
     // Emblem options matching brand settings screen configuration
     final List<Map<String, dynamic>> emblems = [
@@ -411,16 +408,19 @@ class _SetupBrandingScreenState extends State<SetupBrandingScreen> {
               ),
               child: _isSaving
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Continue to Credentials',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
-                      ],
+                  : const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Continue to Credentials',
+                            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                        ],
+                      ),
                     ),
             ),
           ),

@@ -33,9 +33,6 @@ class _SetupAdminScreenState extends State<SetupAdminScreen> {
     super.dispose();
   }
 
-  // Local state to track Step 1 completion within the setup route
-  bool _adminSetupSuccess = false;
-
   /// Validates and submits the administrative credentials to the AuthProvider.
   /// If successful, transitions to the next setup phase (SetupProductsScreen) in the same tree.
   Future<void> _submitSetup() async {
@@ -49,11 +46,7 @@ class _SetupAdminScreenState extends State<SetupAdminScreen> {
     bool success = await authProvider.completeAdminSetup(username, credential, _isPinMode);
     
     if (success && mounted) {
-      // Switch local state to display Step 2. This keeps the widget tree stable 
-      // when AuthRouteGuard/AuthProvider calls notifyListeners().
-      setState(() {
-        _adminSetupSuccess = true;
-      });
+      // No-op: global AuthRouteGuard handles transitioning to Step 3 automatically
     } else if (mounted) {
       // Display error message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,10 +60,6 @@ class _SetupAdminScreenState extends State<SetupAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // If Step 1 is successful, smoothly transition the view to Step 2 within the same unregistered route.
-    if (_adminSetupSuccess) {
-      return const SetupProductsScreen();
-    }
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(

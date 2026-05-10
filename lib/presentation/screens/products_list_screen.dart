@@ -697,16 +697,96 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
 
                         ...List.generate(_customColumnControllers.length, (index) {
                           final pair = _customColumnControllers[index];
+                          
+                          // Fetch unique custom property keys alphabetically from the provider database logs
+                          final productProvider = Provider.of<ProductProvider>(context, listen: false);
+                          final List<String> sortedSuggestions = productProvider.customPropertyKeys;
+
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Row(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(child: CustomTextField(controller: pair.key, labelText: 'Property', prefixIcon: Icons.label_outline, validator: (v) => v!.isEmpty ? 'Enter key' : null)),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.arrow_right_alt, color: AppColors.textSecondary),
-                                const SizedBox(width: 8),
-                                Expanded(child: CustomTextField(controller: pair.value, labelText: 'Value', prefixIcon: Icons.description_outlined, validator: (v) => v!.isEmpty ? 'Enter value' : null)),
-                                IconButton(icon: const Icon(Icons.remove_circle_outline, color: AppColors.error, size: 18), onPressed: () => _removeCustomColumn(index)),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          CustomTextField(
+                                            controller: pair.key,
+                                            labelText: 'Property (e.g. Size)',
+                                            prefixIcon: Icons.label_outline,
+                                            validator: (v) => v!.isEmpty ? 'Enter key' : null,
+                                          ),
+                                          if (sortedSuggestions.isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              physics: const BouncingScrollPhysics(),
+                                              child: Row(
+                                                children: sortedSuggestions.map((key) {
+                                                  return Padding(
+                                                    padding: const EdgeInsets.only(right: 6.0),
+                                                    child: InkWell(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          pair.key.text = key;
+                                                        });
+                                                      },
+                                                      borderRadius: BorderRadius.circular(4),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.surfaceLight,
+                                                          borderRadius: BorderRadius.circular(4),
+                                                          border: Border.all(
+                                                            color: AppColors.primaryLight.withOpacity(0.3),
+                                                            width: 1.0,
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          key,
+                                                          style: const TextStyle(
+                                                            color: AppColors.primaryLight,
+                                                            fontSize: 10,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 12.0),
+                                      child: Icon(Icons.arrow_right_alt, color: AppColors.textSecondary),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: CustomTextField(
+                                        controller: pair.value,
+                                        labelText: 'Value (e.g. Large)',
+                                        prefixIcon: Icons.description_outlined,
+                                        validator: (v) => v!.isEmpty ? 'Enter value' : null,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: IconButton(
+                                        icon: const Icon(Icons.remove_circle_outline, color: AppColors.error, size: 18),
+                                        onPressed: () => _removeCustomColumn(index),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           );

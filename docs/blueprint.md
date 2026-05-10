@@ -49,13 +49,13 @@ Responsible for persistence, database management, and SQL interaction.
 * [data/models/order_model.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/models/order_model.dart) - Transaction ledger entry model. Tracks transaction elements, auto-calculates total prices, and handles joint SQL queries containing joined product attributes (`productName`).
 * [data/models/merchant_model.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/models/merchant_model.dart) - Store configurations model representing white-label branding variables. Map codenames (e.g. `FLAME`, `GAS`, `STORE`, `BAG`) directly to beautiful Material design icons.
 * [data/repository/user_repository.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/repository/user_repository.dart) - SQLite query interface for administrative credentials. Manages password/PIN checks, master account creation, and validation checks.
-* [data/repository/product_repository.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/repository/product_repository.dart) - SQLite query interface for products. Executes inserts, updates, deletes, and fetch operations.
+* [data/repository/product_repository.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/repository/product_repository.dart) - SQLite query interface for products. Executes inserts, updates, deletes, and fetch operations. Automatically extracts and populates unique custom property keys into the `product_property_keys` lookup table to drive suggestions.
 * [data/repository/order_repository.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/data/repository/order_repository.dart) - SQLite query interface for orders. Handles critical transactional operations (e.g., placing an order with rigorous database-level stock validation checks, and restocking on cancellation). Includes complex dashboard aggregation queries.
 
 ### Providers Layer (`lib/providers/`)
 Reactivity handlers acting as the State Management controllers using ChangeNotifier.
 * [providers/auth_provider.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/providers/auth_provider.dart) - Tracks user state through `AuthStatus` enum (`loading`, `unregistered`, `unauthenticated`, `authenticated`). Restricts access using guards and enforces premium 3-second splash screens for branding reinforcement.
-* [providers/product_provider.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/providers/product_provider.dart) - Manages live inventory queries, CRUD actions, search filters, and reactive notification bindings.
+* [providers/product_provider.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/providers/product_provider.dart) - Manages live inventory queries, CRUD actions, search filters, and reactive notification bindings. Exposes reactive cache lists of uniquely harvested custom property keys for interactive autocomplete.
 * [providers/order_provider.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/providers/order_provider.dart) - Handles customer checkout actions, order ledger tables, statuses modifications, and real-time dashboard analytics counters.
 * [providers/merchant_provider.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/providers/merchant_provider.dart) - Keeps white-label branding configurations reactive, allowing real-time changes to the title, taglines, and icons across the entire platform.
 * [providers/backup_provider.dart](file:///Users/michaeljosephsantos/Desktop/personal-projects/project-2/lib/providers/backup_provider.dart) - Coordinates state and triggers for memory compression and cross-platform file picking/saving configurations.
@@ -114,19 +114,31 @@ CREATE TABLE products (
 ```
 
 ### `orders`
-The sales ledger database. Features foreign key binding pointing to the product definition catalog.
+The sales ledger database. Captures customer profiles and transaction-level grand totals.
 ```sql
 CREATE TABLE orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   customer_name TEXT NOT NULL,
   customer_address TEXT NOT NULL,
-  product_id INTEGER NOT NULL,
-  quantity INTEGER NOT NULL,
-  computed_price REAL NOT NULL,  -- Quantity * products.selling_price
   fulfillment_type TEXT NOT NULL,-- 'DELIVERY' or 'WALKIN'
   delivery_rider TEXT,           -- Optional string
   status TEXT NOT NULL DEFAULT 'PENDING', -- 'PENDING', 'COMPLETED', 'CANCELLED'
-  created_at TEXT NOT NULL,      -- ISO-8601 string
+  total_price REAL NOT NULL DEFAULT 0.0,  -- Sum of all order item subtotals
+  created_at TEXT NOT NULL       -- ISO-8601 string
+);
+```
+
+### `order_items`
+Holds line items purchased inside an order, snapping the current unit_price at checkout.
+```sql
+CREATE TABLE order_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  product_id INTEGER NOT NULL,
+  quantity INTEGER NOT NULL,
+  unit_price REAL NOT NULL,
+  computed_price REAL NOT NULL,  -- quantity * unit_price
+  FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT
 );
 ```
@@ -140,6 +152,15 @@ CREATE TABLE merchant_config (
   store_tagline TEXT NOT NULL,
   store_icon TEXT NOT NULL,      -- E.g. 'FLAME', 'STORE', 'BAG', 'CART', 'FOOD'
   updated_at TEXT NOT NULL       -- ISO-8601 string
+);
+```
+
+### `product_property_keys`
+Custom attributes lookup table. Caches all unique key names entered by the merchant for dynamic input suggestions.
+```sql
+CREATE TABLE product_property_keys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key_name TEXT NOT NULL UNIQUE
 );
 ```
 
@@ -182,7 +203,9 @@ CREATE TABLE merchant_config (
 * `status`: Get current `AuthStatus`.
 * `currentUser`: Get parsed `UserModel`.
 * `loginError`: Return active string or null.
-* `completeAdminSetup(username, credential, isPin)`: Registers master credentials.
+* `onboardingStep`: Get current onboarding setup progress step index (1, 2, or 3).
+* `setOnboardingStep(step)`: Atomically updates onboarding screen progress and triggers layout transitions.
+* `completeAdminSetup(username, credential, isPin)`: Registers master credentials and advances step.
 * `login(username, credential, isPin)`: Authenticates user and flips status.
 * `logout()`: Reset active session back to lock screen.
 * `resetApplication()`: Drops all SQL tables and moves back to first-time onboarding.

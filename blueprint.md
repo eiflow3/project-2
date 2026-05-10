@@ -182,7 +182,9 @@ CREATE TABLE merchant_config (
 * `status`: Get current `AuthStatus`.
 * `currentUser`: Get parsed `UserModel`.
 * `loginError`: Return active string or null.
-* `completeAdminSetup(username, credential, isPin)`: Registers master credentials.
+* `onboardingStep`: Get current onboarding setup progress step index (1, 2, or 3).
+* `setOnboardingStep(step)`: Atomically updates onboarding screen progress and triggers layout transitions.
+* `completeAdminSetup(username, credential, isPin)`: Registers master credentials and advances step.
 * `login(username, credential, isPin)`: Authenticates user and flips status.
 * `logout()`: Reset active session back to lock screen.
 * `resetApplication()`: Drops all SQL tables and moves back to first-time onboarding.

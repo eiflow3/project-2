@@ -9,10 +9,12 @@ class ProductProvider with ChangeNotifier {
   final ProductRepository _productRepo = ProductRepository();
 
   List<ProductModel> _products = [];
+  List<String> _customPropertyKeys = [];
   bool _isLoading = false;
   String? _errorMessage;
 
   List<ProductModel> get products => _products;
+  List<String> get customPropertyKeys => _customPropertyKeys;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -28,6 +30,7 @@ class ProductProvider with ChangeNotifier {
 
     try {
       _products = await _productRepo.getAllProducts();
+      _customPropertyKeys = await _productRepo.getCustomPropertyKeys();
     } catch (e) {
       _errorMessage = "Failed to load product catalog from database.";
     } finally {

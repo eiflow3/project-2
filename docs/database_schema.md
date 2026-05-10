@@ -6,11 +6,13 @@ This document details the SQLite database design for our offline Flutter Order M
 
 ## Database Architecture Overview
 
-The offline storage consists of four core tables:
+The offline storage consists of six core tables:
 1. `users`: Stores admin/master account credentials (PIN or Password hashes) and session settings.
 2. `products`: Stores the merchant's custom inventory including unit costs, retail prices, stock quantity, and dynamically added column attributes.
-3. `orders`: Tracks client sales transactions, capturing buyer profiles, specific items purchased, price-aggregations, fulfillment methods, and progress statuses.
-4. `merchant_config`: Stores white-label settings allowing the system to dynamically brand itself on startup (Store Name, tagline, and chosen logo code).
+3. `orders`: Tracks client sales transaction headers, capturing buyer profiles, grand total price-aggregations, fulfillment methods, and progress statuses.
+4. `order_items`: Tracks discrete product lines purchased inside a given customer order, capturing stock snapshot prices.
+5. `merchant_config`: Stores white-label settings allowing the system to dynamically brand itself on startup (Store Name, tagline, and chosen logo code).
+6. `product_property_keys`: Lookup registry storing unique user-defined custom property key names (e.g. 'Size', 'Weight', 'Brand') to power autocomplete suggestions.
 
 ```mermaid
 erDiagram
@@ -35,13 +37,19 @@ erDiagram
         INTEGER id PK
         TEXT customer_name
         TEXT customer_address
-        INTEGER product_id FK
-        INTEGER quantity
-        REAL computed_price "quantity * selling_price"
+        REAL total_price "Sum of all order_items computed_prices"
         TEXT fulfillment_type "DELIVERY or WALKIN"
         TEXT delivery_rider "Optional"
         TEXT status "PENDING, COMPLETED, CANCELLED"
         TEXT created_at
+    }
+    ORDER_ITEMS {
+        INTEGER id PK
+        INTEGER order_id FK "REFERENCES orders(id)"
+        INTEGER product_id FK "REFERENCES products(id)"
+        INTEGER quantity
+        REAL unit_price "Snapshot price at sale"
+        REAL computed_price "quantity * unit_price"
     }
     MERCHANT_CONFIG {
         INTEGER id PK
@@ -50,8 +58,13 @@ erDiagram
         TEXT store_icon
         TEXT updated_at
     }
+    PRODUCT_PROPERTY_KEYS {
+        INTEGER id PK
+        TEXT key_name "UNIQUE"
+    }
 
-    PRODUCTS ||--o{ ORDERS : "linked to"
+    ORDERS ||--|{ ORDER_ITEMS : "contains"
+    PRODUCTS ||--o{ ORDER_ITEMS : "purchased inside"
 ```
 
 ---
@@ -88,16 +101,14 @@ Holds the item catalog. Custom user-defined columns (like "Weight", "Color", "Si
 ---
 
 ### 3. `orders` Table
-Captures store orders. The price is auto-computed based on the active product selling price at the moment of creation, multiplied by order quantity.
+Captures store order headers. The grand total price sums all linked order item lines, preserving accounting consistency.
 
 | Column Name | SQLite Data Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique transaction order tracking ID. |
 | `customer_name`| `TEXT` | `NOT NULL` | Client's full name. |
 | `customer_address`| `TEXT` | `NOT NULL` | Full delivery address (or Walk-in store marker). |
-| `product_id` | `INTEGER` | `FOREIGN KEY REFERENCES products(id)` | Associated product record. |
-| `quantity` | `INTEGER` | `NOT NULL DEFAULT 1` | Quantity bought. |
-| `computed_price`| `REAL` | `NOT NULL` | Price calculated as `quantity * product_selling_price`. |
+| `total_price` | `REAL` | `NOT NULL DEFAULT 0.0` | Billing total calculated as `SUM(order_items.computed_price)`. |
 | `fulfillment_type`| `TEXT` | `NOT NULL` | Order distribution channel: `'DELIVERY'` or `'WALKIN'`. |
 | `delivery_rider`| `TEXT` | `NULL` | Name/ID of the courier (optional). |
 | `status` | `TEXT` | `NOT NULL DEFAULT 'PENDING'` | Operational state: `'PENDING'`, `'COMPLETED'`, or `'CANCELLED'`. |
@@ -105,7 +116,21 @@ Captures store orders. The price is auto-computed based on the active product se
 
 ---
 
-### 4. `merchant_config` Table
+### 4. `order_items` Table
+Detailed breakdown of items purchased inside a sales transaction, decoupling products and orders for multi-item checkouts.
+
+| Column Name | SQLite Data Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique identifier for the line item. |
+| `order_id` | `INTEGER` | `FOREIGN KEY REFERENCES orders(id) ON DELETE CASCADE` | Associated sales order ledger header. |
+| `product_id` | `INTEGER` | `FOREIGN KEY REFERENCES products(id) ON DELETE RESTRICT` | Associated product inventory record. |
+| `quantity` | `INTEGER` | `NOT NULL` | Quantity of items bought. |
+| `unit_price` | `REAL` | `NOT NULL` | Snapshot of product selling price at checkout time. |
+| `computed_price`| `REAL` | `NOT NULL` | Line total computed as `quantity * unit_price`. |
+
+---
+
+### 5. `merchant_config` Table
 Houses dynamic merchant-specific branding configs to support full white-label distribution.
 
 | Column Name | SQLite Data Type | Constraints | Description |
@@ -115,6 +140,16 @@ Houses dynamic merchant-specific branding configs to support full white-label di
 | `store_tagline` | `TEXT` | `NOT NULL` | Customized brand tagline or operational subtitle. |
 | `store_icon` | `TEXT` | `NOT NULL` | Coded label representing standard brand emblems (e.g. `'GAS'`, `'BAG'`, `'CART'`). |
 | `updated_at` | `TEXT` | `NOT NULL` | Standard ISO-8601 timestamp tracking when settings changed. |
+
+---
+
+### 6. `product_property_keys` Table
+Lookup registry storing unique user-defined custom property key names (e.g. `'Size'`, `'Weight'`, `'Brand'`) to power suggestions autocomplete when merchants register or update products.
+
+| Column Name | SQLite Data Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique identifier for the key record. |
+| `key_name` | `TEXT` | `NOT NULL UNIQUE` | The unique name of the custom property key (e.g. `'Size'`, `'Weight'`). |
 
 ---
 

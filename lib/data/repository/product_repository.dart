@@ -19,11 +19,15 @@ class ProductRepository {
   Future<int> insertProduct(ProductModel product) async {
     final db = await _dbService.database;
     try {
-      return await db.insert(
+      final int id = await db.insert(
         'products',
         product.toMap(),
         conflictAlgorithm: ConflictAlgorithm.abort, // Abort to notify user of duplicated names
       );
+      if (id != -1 && product.extraColumns.isNotEmpty) {
+        await _saveKeys(db, product.extraColumns.keys.toList());
+      }
+      return id;
     } catch (_) {
       return -1;
     }
@@ -37,14 +41,21 @@ class ProductRepository {
     try {
       await db.transaction((txn) async {
         final Batch batch = txn.batch();
+        final List<String> allKeys = [];
         for (var product in products) {
           batch.insert(
             'products',
             product.toMap(),
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
+          if (product.extraColumns.isNotEmpty) {
+            allKeys.addAll(product.extraColumns.keys);
+          }
         }
         await batch.commit(noResult: true);
+        if (allKeys.isNotEmpty) {
+          await _saveKeys(txn, allKeys);
+        }
       });
       return true;
     } catch (_) {
@@ -63,6 +74,9 @@ class ProductRepository {
       where: 'id = ?',
       whereArgs: [product.id],
     );
+    if (count > 0 && product.extraColumns.isNotEmpty) {
+      await _saveKeys(db, product.extraColumns.keys.toList());
+    }
     return count > 0;
   }
 
@@ -83,5 +97,29 @@ class ProductRepository {
       // Deletions of products with existing order logs are blocked to protect business data
       return false;
     }
+  }
+
+  /// Helper helper to uniquely insert custom property keys using INSERT OR IGNORE.
+  Future<void> _saveKeys(DatabaseExecutor db, List<String> keys) async {
+    for (var key in keys) {
+      final String trimmed = key.trim();
+      if (trimmed.isNotEmpty) {
+        await db.insert(
+          'product_property_keys',
+          {'key_name': trimmed},
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      }
+    }
+  }
+
+  /// Retrieves all uniquely registered custom property keys (e.g. 'Size', 'Weight') from the database.
+  Future<List<String>> getCustomPropertyKeys() async {
+    final db = await _dbService.database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'product_property_keys',
+      orderBy: 'key_name ASC',
+    );
+    return results.map((row) => row['key_name'] as String).toList();
   }
 }

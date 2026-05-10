@@ -39,7 +39,7 @@ class DatabaseService {
     // Opens or creates the SQLite DB file, setting our version scheme
     return await openDatabase(
       path,
-      version: 2,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: _onConfigure,
@@ -75,6 +75,90 @@ class DatabaseService {
         'updated_at': DateTime.now().toIso8601String(),
       });
     }
+
+    if (oldVersion < 3) {
+      // Upgrading to version 3: Create order_items table for 1-to-many product orders
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS order_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          order_id INTEGER NOT NULL,
+          product_id INTEGER NOT NULL,
+          quantity INTEGER NOT NULL,
+          unit_price REAL NOT NULL,
+          computed_price REAL NOT NULL,
+          FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT
+        );
+      ''');
+
+      // Add total_price column to orders table safely
+      try {
+        await db.execute('ALTER TABLE orders ADD COLUMN total_price REAL NOT NULL DEFAULT 0.0;');
+      } catch (e) {
+        // Column may already exist
+      }
+
+      // Migrate existing single-product orders into the new order_items table
+      try {
+        final List<Map<String, dynamic>> existingOrders = await db.rawQuery('SELECT * FROM orders');
+        for (var order in existingOrders) {
+          final int orderId = order['id'] as int;
+          
+          // Check if columns exist in current table (version 2 had product_id, quantity, computed_price)
+          if (order.containsKey('product_id') && order['product_id'] != null) {
+            final int? productId = order['product_id'] as int?;
+            final int? quantity = order['quantity'] as int?;
+            final double computedPrice = (order['computed_price'] as num?)?.toDouble() ?? 0.0;
+
+            if (productId != null && quantity != null && quantity > 0) {
+              final double unitPrice = computedPrice / quantity;
+              
+              // Double check to prevent duplicated migration entries
+              final List<Map<String, dynamic>> duplicateCheck = await db.query(
+                'order_items',
+                where: 'order_id = ? AND product_id = ?',
+                whereArgs: [orderId, productId],
+              );
+
+              if (duplicateCheck.isEmpty) {
+                await db.insert('order_items', {
+                  'order_id': orderId,
+                  'product_id': productId,
+                  'quantity': quantity,
+                  'unit_price': unitPrice,
+                  'computed_price': computedPrice,
+                });
+              }
+            }
+
+            // Sync total_price in orders table
+            await db.rawUpdate(
+              'UPDATE orders SET total_price = ? WHERE id = ?',
+              [computedPrice, orderId]
+            );
+          }
+        }
+      } catch (e) {
+        // Catch-all to prevent locking the app if some migration data is irregular
+        if (kDebugMode) {
+          print('Migration to v3 error: $e');
+        }
+      }
+
+      // Add indices to optimize search scaling on 100+ items and order reconciliations
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items (order_id);');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_products_name ON products (name);');
+    }
+
+    if (oldVersion < 4) {
+      // Upgrading to version 4: Create product_property_keys table
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS product_property_keys (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          key_name TEXT NOT NULL UNIQUE
+        );
+      ''');
+    }
   }
 
   /// Executes SQL commands to build all required data tables from scratch.
@@ -104,24 +188,35 @@ class DatabaseService {
       );
     ''');
 
-    // 3. Create client orders transaction tracking table
+    // 3. Create client orders transaction tracking table (Clean version 3 schema)
     await db.execute('''
       CREATE TABLE orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         customer_name TEXT NOT NULL,
         customer_address TEXT NOT NULL,
-        product_id INTEGER NOT NULL,
-        quantity INTEGER NOT NULL,
-        computed_price REAL NOT NULL,
         fulfillment_type TEXT NOT NULL,
         delivery_rider TEXT,
         status TEXT NOT NULL DEFAULT 'PENDING',
-        created_at TEXT NOT NULL,
+        total_price REAL NOT NULL DEFAULT 0.0,
+        created_at TEXT NOT NULL
+      );
+    ''');
+
+    // 4. Create client order_items table (Clean version 3 schema)
+    await db.execute('''
+      CREATE TABLE order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        quantity INTEGER NOT NULL,
+        unit_price REAL NOT NULL,
+        computed_price REAL NOT NULL,
+        FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT
       );
     ''');
 
-    // 4. Create merchant branding config table
+    // 5. Create merchant branding config table
     await db.execute('''
       CREATE TABLE merchant_config (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,7 +228,6 @@ class DatabaseService {
     ''');
 
     // Add a default system user to skip manual CLI inserts (just in case)
-    // The presentation setup wizard will prompt to overwrite this default
     await db.insert('users', {
       'username': 'admin',
       'auth_type': 'PIN',
@@ -141,13 +235,25 @@ class DatabaseService {
       'created_at': DateTime.now().toIso8601String(),
     });
 
-    // Pre-populate with default branding (e.g. OrderFlow as default!)
+    // Pre-populate with default branding
     await db.insert('merchant_config', {
       'store_name': 'OrderFlow',
       'store_tagline': 'OFFLINE LEDGER & POS SYSTEM',
       'store_icon': 'STORE',
       'updated_at': DateTime.now().toIso8601String(),
     });
+
+    // Create indices on clean installation
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items (order_id);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_products_name ON products (name);');
+
+    // Create custom properties lookup table
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS product_property_keys (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key_name TEXT NOT NULL UNIQUE
+      );
+    ''');
   }
 
   /// Drops or deletes all data from tables and re-inserts the default admin.
@@ -155,14 +261,18 @@ class DatabaseService {
   Future<void> clearAllData() async {
     final db = await database;
     await db.transaction((txn) async {
-      // 1. Clear orders ledger
+      // 1. Clear order_items first due to foreign keys!
+      await txn.execute('DELETE FROM order_items;');
+      // 2. Clear orders ledger
       await txn.execute('DELETE FROM orders;');
-      // 2. Clear products inventory
+      // 3. Clear products inventory
       await txn.execute('DELETE FROM products;');
-      // 3. Clear security credentials
+      // 4. Clear security credentials
       await txn.execute('DELETE FROM users;');
-      // 4. Clear merchant branding
+      // 5. Clear merchant branding
       await txn.execute('DELETE FROM merchant_config;');
+      // 6. Clear product custom property keys
+      await txn.execute('DELETE FROM product_property_keys;');
 
       // 5. Re-inject temporary default credentials to enable setup flow
       await txn.insert('users', {

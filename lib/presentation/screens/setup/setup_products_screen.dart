@@ -296,32 +296,100 @@ class _SetupProductsScreenState extends State<SetupProductsScreen> {
                           // Render dynamic row controller elements
                           ...List.generate(_customColumnControllers.length, (index) {
                             final controllers = _customColumnControllers[index];
+                            
+                            // Gather unique custom keys alphabetically from both provider and staged products
+                            final productProvider = Provider.of<ProductProvider>(context, listen: false);
+                            final Set<String> suggestedKeys = {};
+                            suggestedKeys.addAll(productProvider.customPropertyKeys);
+                            for (var product in _stagedProducts) {
+                              suggestedKeys.addAll(product.extraColumns.keys);
+                            }
+                            final List<String> sortedSuggestions = suggestedKeys.toList()..sort();
+
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12.0),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
-                                    child: CustomTextField(
-                                      controller: controllers.key,
-                                      labelText: 'Property (e.g. Size)',
-                                      prefixIcon: Icons.label_outline,
-                                      validator: (v) => v!.isEmpty ? 'Enter key' : null,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_right_alt, color: AppColors.textSecondary),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: CustomTextField(
-                                      controller: controllers.value,
-                                      labelText: 'Value (e.g. Large)',
-                                      prefixIcon: Icons.description_outlined,
-                                      validator: (v) => v!.isEmpty ? 'Enter value' : null,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.remove_circle_outline, color: AppColors.error, size: 20),
-                                    onPressed: () => _removeCustomColumn(index),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            CustomTextField(
+                                              controller: controllers.key,
+                                              labelText: 'Property (e.g. Size)',
+                                              prefixIcon: Icons.label_outline,
+                                              validator: (v) => v!.isEmpty ? 'Enter key' : null,
+                                            ),
+                                            if (sortedSuggestions.isNotEmpty) ...[
+                                              const SizedBox(height: 4),
+                                              SingleChildScrollView(
+                                                scrollDirection: Axis.horizontal,
+                                                physics: const BouncingScrollPhysics(),
+                                                child: Row(
+                                                  children: sortedSuggestions.map((key) {
+                                                    return Padding(
+                                                      padding: const EdgeInsets.only(right: 6.0),
+                                                      child: InkWell(
+                                                        onTap: () {
+                                                          setState(() {
+                                                            controllers.key.text = key;
+                                                          });
+                                                        },
+                                                        borderRadius: BorderRadius.circular(4),
+                                                        child: Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                          decoration: BoxDecoration(
+                                                            color: AppColors.surfaceLight,
+                                                            borderRadius: BorderRadius.circular(4),
+                                                            border: Border.all(
+                                                              color: AppColors.primaryLight.withOpacity(0.3),
+                                                              width: 1.0,
+                                                            ),
+                                                          ),
+                                                          child: Text(
+                                                            key,
+                                                            style: const TextStyle(
+                                                              color: AppColors.primaryLight,
+                                                              fontSize: 10,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 12.0),
+                                        child: Icon(Icons.arrow_right_alt, color: AppColors.textSecondary),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: CustomTextField(
+                                          controller: controllers.value,
+                                          labelText: 'Value (e.g. Large)',
+                                          prefixIcon: Icons.description_outlined,
+                                          validator: (v) => v!.isEmpty ? 'Enter value' : null,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4.0),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.remove_circle_outline, color: AppColors.error, size: 20),
+                                          onPressed: () => _removeCustomColumn(index),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

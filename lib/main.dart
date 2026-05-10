@@ -18,6 +18,7 @@ import 'providers/backup_provider.dart';
 // Authentication & Onboarding Screens
 import 'presentation/screens/setup/setup_admin_screen.dart';
 import 'presentation/screens/setup/setup_branding_screen.dart';
+import 'presentation/screens/setup/setup_products_screen.dart';
 import 'presentation/screens/login_screen.dart';
 
 // Core App Functional Screens
@@ -117,8 +118,17 @@ class AuthRouteGuard extends StatelessWidget {
       case AuthStatus.loading:
         return const AppPreloadingScreen();
       case AuthStatus.unregistered:
-        // No administrative master account present, show branding setup first
-        return const SetupBrandingScreen();
+        // No administrative master account present, render corresponding Setup Wizard Step based on current progress
+        switch (authProvider.onboardingStep) {
+          case 1:
+            return const SetupBrandingScreen();
+          case 2:
+            return const SetupAdminScreen();
+          case 3:
+            return const SetupProductsScreen();
+          default:
+            return const SetupBrandingScreen();
+        }
       case AuthStatus.unauthenticated:
         // Admin registered, but active session is locked, show Login Screen
         return const LoginScreen();

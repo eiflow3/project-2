@@ -128,13 +128,14 @@ Whenever you commit and push your code to the `main` branch of your repository o
 ## Application Reset & Testing Stage
 
 To facilitate rapid, secure testing of newly compiled releases starting from a clean database state:
-* **Two-Stage Onboarding**: The Setup Wizard enforces a strict sequential 2-stage process:
-  1. **Step 1 (Admin Setup)**: Register the master administrative username and security key (supporting Password or PIN modes).
-  2. **Step 2 (Populate Catalog)**: Stage and save initial product inventory items into SQLite.
+* **Three-Stage Onboarding**: The Setup Wizard enforces a strict sequential 3-stage process:
+  1. **Step 1 (Store Identity & Branding)**: Customize the merchant storefront name, tagline, and select a premium icon emblem.
+  2. **Step 2 (Admin Setup)**: Register the master administrative username and security key (supporting Password or PIN modes).
+  3. **Step 3 (Populate Catalog)**: Stage and save initial product inventory items into SQLite.
 * **Reset Feature**: The application features a built-in **Reset Application** function.
 * **Accessing the Reset Action**:
   * **Desktop viewports**: Click the red-outlined **Reset Application** button at the bottom of the left sidebar.
   * **Mobile viewports**: Click the trash-can **Reset Application** icon in the top-right corner of the mobile App Bar.
 * **🔒 Security Verification**: To prevent accidental data loss or unauthorized database wipes, clicking reset displays a stateful authorization prompt. The merchant **must enter their active administrative PIN or Password** to authorize the reset.
 * **Database Behavior**: On successful authorization, the application executes an atomic transaction that safely purges all orders, inventory tables, and admin credentials from SQLite.
-* **Instant Redirection**: Once wiped, the application instantly redirects back to **Step 1 (Administrative Master Setup)**, allowing you to run onboarding and catalog staging test routines starting from a pristine local environment!
+* **Instant Redirection**: Once wiped, the application instantly redirects back to **Step 1 (Store Identity & Branding)**, allowing you to run onboarding and catalog staging test routines starting from a pristine local environment!

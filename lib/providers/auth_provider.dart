@@ -19,9 +19,23 @@ class AuthProvider with ChangeNotifier {
   UserModel? _currentUser;
   String? _loginError;
 
+  // Track the current active step in the 3-step first-time onboarding wizard
+  // Step 1: Store branding customization (SetupBrandingScreen)
+  // Step 2: Master administrative credentials registration (SetupAdminScreen)
+  // Step 3: Initial product catalog staging/preloading (SetupProductsScreen)
+  int _onboardingStep = 1;
+
   AuthStatus get status => _status;
   UserModel? get currentUser => _currentUser;
   String? get loginError => _loginError;
+  int get onboardingStep => _onboardingStep;
+
+  /// Updates the current onboarding progress step index and notifies listeners.
+  /// This stabilizes route transitions by preventing local wizard pages from resetting on state changes.
+  void setOnboardingStep(int step) {
+    _onboardingStep = step;
+    notifyListeners();
+  }
 
   AuthProvider() {
     checkInitialState();
@@ -69,8 +83,10 @@ class AuthProvider with ChangeNotifier {
     bool success = await _userRepo.registerMasterAccount(newAdmin);
     if (success) {
       _currentUser = newAdmin;
-      // Keep state as unregistered so the onboarding route remains active for Step 2 (Product Catalog Staging)
+      // Keep state as unregistered so the onboarding route remains active for Step 3 (Product Catalog Staging)
       _status = AuthStatus.unregistered;
+      // Advance the onboarding wizard automatically to Step 3
+      _onboardingStep = 3;
       _loginError = null;
     } else {
       _status = AuthStatus.unregistered;
@@ -80,10 +96,11 @@ class AuthProvider with ChangeNotifier {
     return success;
   }
 
-  /// Finalizes the entire 2-stage setup. Sets status to authenticated
-  /// and unlocks the main application workspace.
+  /// Finalizes the entire 3-stage setup. Sets status to authenticated,
+  /// resets the onboarding step progress, and unlocks the main application workspace.
   void finalizeOnboarding() {
     _status = AuthStatus.authenticated;
+    _onboardingStep = 1; // Reset step back to default for any future setup/reset
     notifyListeners();
   }
 
@@ -129,6 +146,8 @@ class AuthProvider with ChangeNotifier {
       await dbService.clearAllData();
       _currentUser = null;
       _status = AuthStatus.unregistered;
+      // Reset the onboarding wizard progress step to 1 on complete app reset
+      _onboardingStep = 1;
       _loginError = null;
     } catch (_) {
       _loginError = "Failed to reset application database.";
